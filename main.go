@@ -1,36 +1,41 @@
 package main
 
 import (
-	"fmt"
+	"image"
 	"image/color"
 	"log"
-	"math"
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hvassaa/gaster/raycasting"
-
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 const (
 	WORLD_WIDTH      = 800.
-	WORLD_HEIGHT     = 1200.
-	BLOCK_SIZE       = 80.
+	WORLD_HEIGHT     = 800.
+	BLOCK_SIZE       = 40.
 	BLOCKS_X     int = WORLD_WIDTH / BLOCK_SIZE
 	BLOCKS_Y     int = WORLD_HEIGHT / BLOCK_SIZE
 )
 
 type Game struct {
-	player *Player
-	mab    [][]raycasting.WallType
+	player        *Player
+	mab           [][]raycasting.WallType
+	represntation int
 }
 
 func (g *Game) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
 		os.Exit(0)
 	}
+	if ebiten.IsKeyPressed(ebiten.Key1) {
+		g.represntation = 0
+	} else if ebiten.IsKeyPressed(ebiten.Key2) {
+		g.represntation = 1
+	} else if ebiten.IsKeyPressed(ebiten.Key3) {
+		g.represntation = 2
+	}
+
 	if ebiten.IsKeyPressed(ebiten.KeyA) {
 		g.player.IncreaseAngle(-0.05)
 	} else if ebiten.IsKeyPressed(ebiten.KeyD) {
@@ -44,48 +49,46 @@ func (g *Game) Update() error {
 	return nil
 }
 
-func (g *Game) Draw(screen *ebiten.Image) {
-	screen.Fill(color.Black)
-	g.Draw2DWalls(screen)
-	g.Draw2DPlayer(screen)
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("angle: %v / %v", g.player.Angle, g.player.Angle/raycasting.PI))
-}
-
-func (g *Game) Draw2DPlayer(screen *ebiten.Image) {
-	playerColor := color.RGBA{200, 0, 0, 0}
-	yellow := color.RGBA{200, 200, 0, 0}
-	vector.DrawFilledCircle(screen, float32(g.player.coordinate.X), float32(g.player.coordinate.Y), 10, playerColor, false)
-	X := float32(g.player.coordinate.X + math.Cos(g.player.Angle)*50)
-	Y := float32(g.player.coordinate.Y + math.Sin(g.player.Angle)*50)
-	vector.StrokeLine(screen, float32(g.player.coordinate.X), float32(g.player.coordinate.Y), X, Y, 1, yellow, false)
+func (g *Game) asd() {
 	for i := -30; i <= 30; i++ {
 		rayAngle := raycasting.NormalizeAngle(g.player.Angle + (float64(i) * raycasting.DEG_TO_RAD))
-		c, _, _ := raycasting.CastRay(*g.player.coordinate, rayAngle, BLOCK_SIZE, g.mab)
-		if !c.IsInvalid() {
-			vector.StrokeLine(screen, float32(g.player.coordinate.X), float32(g.player.coordinate.Y), float32(c.X), float32(c.Y), 1, playerColor, false)
+		coordinate, _, _ := raycasting.CastRay(*g.player.coordinate, rayAngle, BLOCK_SIZE, g.mab)
+		if !coordinate.IsInvalid() {
 		}
 	}
 }
 
-func (g *Game) Draw2DWalls(screen *ebiten.Image) {
-	wallColor := color.RGBA{0, 50, 50, 0}
-	for y, yv := range g.mab {
-		yp := float32(y * BLOCK_SIZE)
-		vector.StrokeLine(screen, 0, yp, float32(WORLD_WIDTH), yp, 1, wallColor, false)
-		for x, wallType := range yv {
-			xp := float32(x * BLOCK_SIZE)
-			if y == 0 {
-				vector.StrokeLine(screen, xp, 0, xp, float32(WORLD_HEIGHT), 1, wallColor, false)
-			}
-			if wallType != 0 {
-				vector.DrawFilledRect(screen, xp, yp, BLOCK_SIZE, BLOCK_SIZE, wallColor, false)
-			}
-		}
+func (g *Game) Draw(screen *ebiten.Image) {
+	if g.represntation == 0 {
+		twoDScreen := screen.SubImage(image.Rect(0, 0, WORLD_WIDTH, WORLD_HEIGHT)).(*ebiten.Image)
+		maxX := screen.Bounds().Max.X
+		threeDScreen := screen.SubImage(image.Rect(WORLD_WIDTH, 0, maxX, WORLD_HEIGHT)).(*ebiten.Image)
+
+		// 2D drawing
+		g.Draw2DWalls(twoDScreen)
+		g.Draw2DPlayer(twoDScreen)
+
+		// 3D drawing
+		g.draw3d(threeDScreen)
+	} else if g.represntation == 1 {
+		g.draw3d(screen)
+	} else if g.represntation == 2 {
+		twoDScreen := screen.SubImage(image.Rect(0, 0, 300, 300)).(*ebiten.Image)
+		twoDScreen.Fill(color.Black)
+
+		// 3D drawing
+		g.draw3d(screen)
+
+		// 2D drawing
+		twoDScreen.Fill(color.RGBA{0, 0, 0, 0})
+		g.Draw2DWalls(twoDScreen)
+		g.Draw2DPlayer(twoDScreen)
+
 	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return WORLD_WIDTH, WORLD_HEIGHT
+	return 1600, 800
 }
 
 func makeStandardMap() [][]raycasting.WallType {
@@ -105,12 +108,28 @@ func makeStandardMap() [][]raycasting.WallType {
 }
 
 func main() {
-	ebiten.SetWindowSize(int(WORLD_WIDTH), int(WORLD_HEIGHT))
+	ebiten.SetWindowSize(1600, 800)
 	mab := makeStandardMap()
 
-	mab[1][1] = 1
 	mab[1][7] = 1
 	mab[2][7] = 1
+	mab[3][7] = 1
+	mab[4][7] = 1
+	mab[4][8] = 1
+	mab[4][9] = 1
+	mab[4][10] = 1
+	mab[4][11] = 1
+	mab[4][12] = 1
+	mab[4][13] = 1
+	mab[4][14] = 1
+
+	mab[13][14] = 1
+	mab[14][14] = 1
+	mab[15][14] = 1
+	mab[16][14] = 1
+	mab[16][13] = 1
+	mab[16][12] = 1
+	mab[16][11] = 1
 
 	game := &Game{
 		player: &Player{

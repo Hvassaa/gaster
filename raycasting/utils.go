@@ -1,8 +1,6 @@
 package raycasting
 
-import (
-	"math"
-)
+import "math"
 
 const (
 	PI            = math.Pi
