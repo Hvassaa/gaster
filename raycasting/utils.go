@@ -37,7 +37,7 @@ func (c Direction) asText() string {
 	panic("unknown direction")
 }
 
-func (c Coordinate) distanceTo(c2 Coordinate) float64 {
+func (c Coordinate) DistanceTo(c2 Coordinate) float64 {
 	xDiff := math.Abs(c.X - c2.X)
 	yDiff := math.Abs(c.Y - c2.Y)
 	return math.Sqrt(xDiff*xDiff + yDiff*yDiff)
@@ -139,9 +139,9 @@ func CastRay(coordinate Coordinate, angle, blockSize float64, m [][]WallType) (C
 	// return castRayVertical(coordinate, angle, blockSize, m)
 
 	ch, dh, wh := castRayHorizontal(coordinate, angle, blockSize, m)
-	l1 := ch.distanceTo(coordinate)
+	l1 := ch.DistanceTo(coordinate)
 	cv, dv, wv := castRayVertical(coordinate, angle, blockSize, m)
-	l2 := cv.distanceTo(coordinate)
+	l2 := cv.DistanceTo(coordinate)
 	if ch.IsInvalid() {
 		return cv, dv, wv
 	}

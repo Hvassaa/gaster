@@ -19,7 +19,7 @@ func translateY(screen *ebiten.Image, y float64) float32 {
 	return float32(y * unitY)
 }
 
-func (g *Game) Draw2DPlayer(screen *ebiten.Image) {
+func (g *Game) Draw2DPlayer(screen *ebiten.Image, raysHits []raycasting.Coordinate) {
 	playerColor := color.RGBA{200, 0, 0, 1}
 	yellow := color.RGBA{200, 200, 0, 1}
 	unitX := float64(screen.Bounds().Dx()) / WORLD_WIDTH
@@ -33,9 +33,7 @@ func (g *Game) Draw2DPlayer(screen *ebiten.Image) {
 	directionRayX := translateX(screen, g.player.coordinate.X + math.Cos(g.player.Angle)*50)
 	directionRayY := translateY(screen, g.player.coordinate.Y + math.Sin(g.player.Angle)*50)
 	vector.StrokeLine(screen, playerX, playerY, directionRayX, directionRayY, 2, yellow, false)
-	for i := -30; i <= 30; i++ {
-		rayAngle := raycasting.NormalizeAngle(g.player.Angle + (float64(i) * raycasting.DEG_TO_RAD))
-		coordinate, _, _ := raycasting.CastRay(*g.player.coordinate, rayAngle, BLOCK_SIZE, g.mab)
+	for _, coordinate := range raysHits {
 		if !coordinate.IsInvalid() {
 			x1 := translateX(screen, g.player.coordinate.X)
 			y1 := translateX(screen, g.player.coordinate.Y)

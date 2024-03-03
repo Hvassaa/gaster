@@ -59,6 +59,17 @@ func (g *Game) asd() {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	coords := make([]raycasting.Coordinate, 61)
+	heights := make([]float32, 61)
+	directions := make([]raycasting.Direction, 61)
+	for i := -30; i <= 30; i++ {
+		rayAngle := raycasting.NormalizeAngle(g.player.Angle + (float64(i) * raycasting.DEG_TO_RAD))
+		coordinate, direction, _ := raycasting.CastRay(*g.player.coordinate, rayAngle, BLOCK_SIZE, g.mab)
+		coords[i+30] = coordinate
+		heights[i+30] = float32(coordinate.DistanceTo(*g.player.coordinate))
+		directions[i+30] = direction
+	}
+
 	if g.represntation == 0 {
 		twoDScreen := screen.SubImage(image.Rect(0, 0, WORLD_WIDTH, WORLD_HEIGHT)).(*ebiten.Image)
 		maxX := screen.Bounds().Max.X
@@ -66,23 +77,23 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 		// 2D drawing
 		g.Draw2DWalls(twoDScreen)
-		g.Draw2DPlayer(twoDScreen)
+		g.Draw2DPlayer(twoDScreen, coords)
 
 		// 3D drawing
-		g.draw3d(threeDScreen)
+		g.draw3d(threeDScreen, heights, directions)
 	} else if g.represntation == 1 {
-		g.draw3d(screen)
+		g.draw3d(screen, heights, directions)
 	} else if g.represntation == 2 {
 		twoDScreen := screen.SubImage(image.Rect(0, 0, 300, 300)).(*ebiten.Image)
 		twoDScreen.Fill(color.Black)
 
 		// 3D drawing
-		g.draw3d(screen)
+		g.draw3d(screen, heights, directions)
 
 		// 2D drawing
 		twoDScreen.Fill(color.RGBA{0, 0, 0, 0})
 		g.Draw2DWalls(twoDScreen)
-		g.Draw2DPlayer(twoDScreen)
+		g.Draw2DPlayer(twoDScreen, coords)
 
 	}
 }
