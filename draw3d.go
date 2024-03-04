@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	"math"
 
@@ -17,7 +18,8 @@ func (g *Game) draw3d(screen *ebiten.Image, rayDistances []float32, directions [
 	screenSize := screen.Bounds().Size()
 	screnWidth := screenSize.X
 	screenHeight := screenSize.Y
-	columnWidth := float32(screnWidth) / 60.0
+	columnWidth := float32(screnWidth) / NO_OF_RAYS
+	fmt.Println(columnWidth)
 
 	for i, rayDist := range rayDistances {
 		columnColor := color.RGBA{255, 0, 0, 0}

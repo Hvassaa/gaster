@@ -17,6 +17,10 @@ const (
 	BLOCK_SIZE       = 40.
 	BLOCKS_X     int = WORLD_WIDTH / BLOCK_SIZE
 	BLOCKS_Y     int = WORLD_HEIGHT / BLOCK_SIZE
+	FOV              = 60
+	NO_OF_RAYS       = 121
+	DEG_BOUNDS       = (NO_OF_RAYS - 1) / 2
+	DEG_PER_RAY      = FOV / (NO_OF_RAYS - 1.)
 )
 
 type Game struct {
@@ -66,18 +70,17 @@ func (g *Game) Update() error {
 // }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	coords := make([]raycasting.Coordinate, 61)
+	coords := make([]raycasting.Coordinate, NO_OF_RAYS)
+	rayDistances := make([]float32, NO_OF_RAYS)
+	directions := make([]raycasting.Direction, NO_OF_RAYS)
 
-	rayDistances := make([]float32, 61)
-	directions := make([]raycasting.Direction, 61)
-
-	for i := -30; i <= 30; i++ {
-		rayAngle := raycasting.NormalizeAngle(g.player.Angle + (float64(i) * raycasting.DEG_TO_RAD))
+	for i := -DEG_BOUNDS; i <= DEG_BOUNDS; i++ {
+		rayAngle := raycasting.NormalizeAngle(g.player.Angle + (float64(i) * DEG_PER_RAY * raycasting.DEG_TO_RAD))
 		coordinate, direction, _ := raycasting.CastRay(*g.player.coordinate, rayAngle, BLOCK_SIZE, g.mab)
-		coords[i+30] = coordinate
+		coords[i+DEG_BOUNDS] = coordinate
 		noFish := math.Cos(raycasting.NormalizeAngle(g.player.Angle - rayAngle))
-		rayDistances[i+30] = float32(coordinate.DistanceTo(*g.player.coordinate) * noFish)
-		directions[i+30] = direction
+		rayDistances[i+DEG_BOUNDS] = float32(coordinate.DistanceTo(*g.player.coordinate) * noFish)
+		directions[i+DEG_BOUNDS] = direction
 	}
 
 	if g.represntation == 0 {
