@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"math"
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -42,31 +43,40 @@ func (g *Game) Update() error {
 		g.player.IncreaseAngle(0.05)
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
-		g.player.Move(1)
+		directionRay, _, _ := raycasting.CastRay(*g.player.coordinate, g.player.Angle, BLOCK_SIZE, g.mab)
+		if directionRay.IsInvalid() || directionRay.DistanceTo(*g.player.coordinate) > BLOCK_SIZE {
+			g.player.Move(1)
+		}
 	} else if ebiten.IsKeyPressed(ebiten.KeyS) {
-		g.player.Move(-1)
+		directionRay, _, _ := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+raycasting.PI), BLOCK_SIZE, g.mab)
+		if directionRay.IsInvalid() || directionRay.DistanceTo(*g.player.coordinate) > BLOCK_SIZE {
+			g.player.Move(-1)
+		}
 	}
 	return nil
 }
 
-func (g *Game) asd() {
-	for i := -30; i <= 30; i++ {
-		rayAngle := raycasting.NormalizeAngle(g.player.Angle + (float64(i) * raycasting.DEG_TO_RAD))
-		coordinate, _, _ := raycasting.CastRay(*g.player.coordinate, rayAngle, BLOCK_SIZE, g.mab)
-		if !coordinate.IsInvalid() {
-		}
-	}
-}
+// func (g *Game) asd() {
+// 	for i := -30; i <= 30; i++ {
+// 		rayAngle := raycasting.NormalizeAngle(g.player.Angle + (float64(i) * raycasting.DEG_TO_RAD))
+// 		coordinate, _, _ := raycasting.CastRay(*g.player.coordinate, rayAngle, BLOCK_SIZE, g.mab)
+// 		if !coordinate.IsInvalid() {
+// 		}
+// 	}
+// }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	coords := make([]raycasting.Coordinate, 61)
-	heights := make([]float32, 61)
+
+	rayDistances := make([]float32, 61)
 	directions := make([]raycasting.Direction, 61)
+
 	for i := -30; i <= 30; i++ {
 		rayAngle := raycasting.NormalizeAngle(g.player.Angle + (float64(i) * raycasting.DEG_TO_RAD))
 		coordinate, direction, _ := raycasting.CastRay(*g.player.coordinate, rayAngle, BLOCK_SIZE, g.mab)
 		coords[i+30] = coordinate
-		heights[i+30] = float32(coordinate.DistanceTo(*g.player.coordinate))
+		noFish := math.Cos(raycasting.NormalizeAngle(g.player.Angle - rayAngle))
+		rayDistances[i+30] = float32(coordinate.DistanceTo(*g.player.coordinate) * noFish)
 		directions[i+30] = direction
 	}
 
@@ -80,15 +90,15 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		g.Draw2DPlayer(twoDScreen, coords)
 
 		// 3D drawing
-		g.draw3d(threeDScreen, heights, directions)
+		g.draw3d(threeDScreen, rayDistances, directions)
 	} else if g.represntation == 1 {
-		g.draw3d(screen, heights, directions)
+		g.draw3d(screen, rayDistances, directions)
 	} else if g.represntation == 2 {
 		twoDScreen := screen.SubImage(image.Rect(0, 0, 300, 300)).(*ebiten.Image)
 		twoDScreen.Fill(color.Black)
 
 		// 3D drawing
-		g.draw3d(screen, heights, directions)
+		g.draw3d(screen, rayDistances, directions)
 
 		// 2D drawing
 		twoDScreen.Fill(color.RGBA{0, 0, 0, 0})
