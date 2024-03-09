@@ -50,7 +50,7 @@ func (g *Game) Update() error {
 
 	// Update y, to look up or down
 	if deltaY != 0 && g.cursorY != 0 {
-		g.yMod = g.yMod + float32(deltaY)
+		g.yMod = max(min(g.yMod + float32(deltaY) * 3, 350), -350)
 	}
 
 	// update mouse position
@@ -59,7 +59,7 @@ func (g *Game) Update() error {
 	// look left or right with mouse
 	xMultiplier := 1.
 	if deltaX != 0 {
-		xMultiplier += math.Abs(float64(deltaX)) / 150.
+		xMultiplier += math.Abs(float64(deltaX)) / 80.
 	}
 	if deltaX > 0 {
 		g.player.IncreaseAngle(-0.05 * xMultiplier)
