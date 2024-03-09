@@ -1,6 +1,9 @@
 package raycasting
 
-import "math"
+import (
+	"errors"
+	"math"
+)
 
 const (
 	PI            = math.Pi
@@ -21,6 +24,12 @@ const DEG_TO_RAD = 0.0174532925
 
 type Coordinate struct {
 	X, Y float64
+}
+
+type Ray struct {
+	C  Coordinate
+	D  Direction
+	Wt WallType
 }
 
 func (c Coordinate) IsInvalid() bool {
@@ -52,7 +61,7 @@ func NormalizeAngle(angle float64) float64 {
 	return angle
 }
 
-func keepCasting(ix, iy, xOffset, yOffset, blockSize float64, direction Direction, m [][]WallType) (Coordinate, WallType) {
+func keepCasting(ix, iy, xOffset, yOffset, blockSize float64, direction Direction, m [][]WallType) (*Ray, error) {
 	y_size := len(m)
 	x_size := len(m[0])
 	for i := 0; i < 100; i++ {
@@ -70,23 +79,27 @@ func keepCasting(ix, iy, xOffset, yOffset, blockSize float64, direction Directio
 		}
 
 		if xx < 0 || xx >= x_size || yy < 0 || yy >= y_size {
-			return Coordinate{math.NaN(), math.NaN()}, 0
+			return nil, errors.New("Ray went outside of world")
 		}
 
 		wallType := m[yy][xx]
 		// TODO we might add more walltypes later, then we should switch instead
 		if wallType != 0 {
-			return Coordinate{ix, iy}, wallType
+			return &Ray{
+				C:  Coordinate{ix, iy},
+				D:  direction,
+				Wt: wallType,
+			}, nil
 		}
 
 		// update to check the next wall
 		ix += xOffset
 		iy += yOffset
 	}
-	return Coordinate{math.NaN(), math.NaN()}, 0
+	return nil, errors.New("Ray did not hit wall before exceeding depth of field")
 }
 
-func castRayHorizontal(coordinate Coordinate, angle, blockSize float64, m [][]WallType) (Coordinate, Direction, WallType) {
+func castRayHorizontal(coordinate Coordinate, angle, blockSize float64, m [][]WallType) (*Ray, error) {
 	// resulting intersection on ix, iy
 	var ix, iy float64
 
@@ -95,7 +108,7 @@ func castRayHorizontal(coordinate Coordinate, angle, blockSize float64, m [][]Wa
 	y_offset := blockSize
 	iy = math.Floor(coordinate.Y/blockSize) * blockSize
 	if angle == 0. || angle == PI {
-		return Coordinate{math.NaN(), coordinate.Y}, HORIZONTAL, 0
+		return nil, errors.New("Horizontal ray cannot hit on angle 0 or PI")
 	} else if angle > PI { // looking down
 		// iterate down
 		y_offset *= -1
@@ -106,11 +119,10 @@ func castRayHorizontal(coordinate Coordinate, angle, blockSize float64, m [][]Wa
 	}
 
 	ix = (coordinate.Y-iy)*a + coordinate.X
-	coordinate, wallType := keepCasting(ix, iy, x_offset, y_offset, blockSize, HORIZONTAL, m)
-	return coordinate, HORIZONTAL, wallType
+	return keepCasting(ix, iy, x_offset, y_offset, blockSize, HORIZONTAL, m)
 }
 
-func castRayVertical(coordinate Coordinate, angle, blockSize float64, m [][]WallType) (Coordinate, Direction, WallType) {
+func castRayVertical(coordinate Coordinate, angle, blockSize float64, m [][]WallType) (*Ray, error) {
 	// resulting intersection on ix, iy
 	var ix, iy float64
 
@@ -119,7 +131,7 @@ func castRayVertical(coordinate Coordinate, angle, blockSize float64, m [][]Wall
 	y_offset := blockSize * a
 	ix = math.Floor(coordinate.X/blockSize) * blockSize
 	if angle == PI_HALF || angle == PI_THREE_HALF {
-		return Coordinate{coordinate.X, math.NaN()}, HORIZONTAL, 0
+		return nil, errors.New("")
 	} else if angle < PI_HALF || angle > PI_THREE_HALF { // looking right
 		// we go block right to look at the right side
 		ix += blockSize
@@ -130,26 +142,23 @@ func castRayVertical(coordinate Coordinate, angle, blockSize float64, m [][]Wall
 	}
 
 	iy = (coordinate.X-ix)*a + coordinate.Y
-	coordinate, wallType := keepCasting(ix, iy, x_offset, y_offset, blockSize, VERTICAL, m)
-	return coordinate, VERTICAL, wallType
+	return keepCasting(ix, iy, x_offset, y_offset, blockSize, VERTICAL, m)
 }
 
-func CastRay(coordinate Coordinate, angle, blockSize float64, m [][]WallType) (Coordinate, Direction, WallType) {
-
-	// return castRayVertical(coordinate, angle, blockSize, m)
-
-	ch, dh, wh := castRayHorizontal(coordinate, angle, blockSize, m)
-	l1 := ch.DistanceTo(coordinate)
-	cv, dv, wv := castRayVertical(coordinate, angle, blockSize, m)
-	l2 := cv.DistanceTo(coordinate)
-	if ch.IsInvalid() {
-		return cv, dv, wv
+func CastRay(coordinate Coordinate, angle, blockSize float64, m [][]WallType) (*Ray, error) {
+	hozRay, hozErr := castRayHorizontal(coordinate, angle, blockSize, m)
+	vertRay, vertErr := castRayVertical(coordinate, angle, blockSize, m)
+	if hozErr != nil && vertErr != nil {
+		return nil, errors.New("No ray hit")
+	} else if hozErr != nil {
+		return vertRay, nil
+	} else if vertErr != nil {
+		return hozRay, nil
 	}
-	if cv.IsInvalid() {
-		return ch, dh, wh
-	}
+	l1 := hozRay.C.DistanceTo(coordinate)
+	l2 := vertRay.C.DistanceTo(coordinate)
 	if l1 > l2 {
-		return cv, dv, wv
+		return vertRay, nil
 	}
-	return ch, dh, wh
+	return hozRay, nil
 }

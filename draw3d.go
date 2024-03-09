@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"image/color"
 	"math"
 
@@ -19,12 +18,11 @@ func (g *Game) draw3d(screen *ebiten.Image, rayDistances []float32, directions [
 	screnWidth := screenSize.X
 	screenHeight := screenSize.Y
 	columnWidth := float32(screnWidth) / NO_OF_RAYS
-	fmt.Println(columnWidth)
 
 	for i, rayDist := range rayDistances {
 		columnColor := color.RGBA{255, 0, 0, 0}
 		if directions[i] == raycasting.HORIZONTAL {
-			columnColor = color.RGBA{255, 75, 0, 0}
+			columnColor = color.RGBA{150, 0, 0, 0}
 		}
 
 		// TODO pythagaros n stuff width and height

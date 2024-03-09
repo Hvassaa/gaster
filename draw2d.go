@@ -9,6 +9,9 @@ import (
 	"github.com/hvassaa/gaster/raycasting"
 )
 
+type TwoDRender struct  {
+}
+
 func translateX(screen *ebiten.Image, x float64) float32 {
 	unitX := float64(screen.Bounds().Dx()) / WORLD_WIDTH
 	return float32(x * unitX)
@@ -24,14 +27,15 @@ func (g *Game) Draw2DPlayer(screen *ebiten.Image, raysHits []raycasting.Coordina
 	yellow := color.RGBA{200, 200, 0, 1}
 	unitX := float64(screen.Bounds().Dx()) / WORLD_WIDTH
 	unitY := float64(screen.Bounds().Dy()) / WORLD_HEIGHT
-	compUnit := (unitX + unitY) / 2
 
-	radius := 10* compUnit
+	compUnit := (unitX + unitY) / 2
+	radius := 10 * compUnit
+
 	playerX := translateX(screen, float64(g.player.coordinate.X))
 	playerY := translateX(screen, float64(g.player.coordinate.Y))
 	vector.DrawFilledCircle(screen, playerX, playerY, float32(radius), playerColor, false)
-	directionRayX := translateX(screen, g.player.coordinate.X + math.Cos(g.player.Angle)*50)
-	directionRayY := translateY(screen, g.player.coordinate.Y + math.Sin(g.player.Angle)*50)
+	directionRayX := translateX(screen, g.player.coordinate.X+math.Cos(g.player.Angle)*50)
+	directionRayY := translateY(screen, g.player.coordinate.Y+math.Sin(g.player.Angle)*50)
 	vector.StrokeLine(screen, playerX, playerY, directionRayX, directionRayY, 2, yellow, false)
 	for _, coordinate := range raysHits {
 		if !coordinate.IsInvalid() {
@@ -47,10 +51,10 @@ func (g *Game) Draw2DPlayer(screen *ebiten.Image, raysHits []raycasting.Coordina
 func (g *Game) Draw2DWalls(screen *ebiten.Image) {
 	wallColor := color.RGBA{0, 50, 50, 0}
 	for y, yv := range g.mab {
-		yp := translateY(screen, float64(y * BLOCK_SIZE))
+		yp := translateY(screen, float64(y*BLOCK_SIZE))
 		vector.StrokeLine(screen, 0, yp, float32(WORLD_WIDTH), yp, 1, wallColor, false)
 		for x, wallType := range yv {
-			xp := translateX(screen, float64(x * BLOCK_SIZE))
+			xp := translateX(screen, float64(x*BLOCK_SIZE))
 			if y == 0 {
 				vector.StrokeLine(screen, xp, 0, xp, translateX(screen, WORLD_HEIGHT), 1, wallColor, false)
 			}

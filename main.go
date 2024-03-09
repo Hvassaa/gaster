@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	WORLD_WIDTH      = 800.
-	WORLD_HEIGHT     = 800.
+	WORLD_WIDTH      = 1200.
+	WORLD_HEIGHT     = 1200.
 	BLOCK_SIZE       = 40.
 	BLOCKS_X     int = WORLD_WIDTH / BLOCK_SIZE
 	BLOCKS_Y     int = WORLD_HEIGHT / BLOCK_SIZE
@@ -47,27 +47,18 @@ func (g *Game) Update() error {
 		g.player.IncreaseAngle(0.05)
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
-		directionRay, _, _ := raycasting.CastRay(*g.player.coordinate, g.player.Angle, BLOCK_SIZE, g.mab)
-		if directionRay.IsInvalid() || directionRay.DistanceTo(*g.player.coordinate) > BLOCK_SIZE {
+		ray, err := raycasting.CastRay(*g.player.coordinate, g.player.Angle, BLOCK_SIZE, g.mab)
+		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE {
 			g.player.Move(1)
 		}
 	} else if ebiten.IsKeyPressed(ebiten.KeyS) {
-		directionRay, _, _ := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+raycasting.PI), BLOCK_SIZE, g.mab)
-		if directionRay.IsInvalid() || directionRay.DistanceTo(*g.player.coordinate) > BLOCK_SIZE {
+		ray, err := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+raycasting.PI), BLOCK_SIZE, g.mab)
+		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE {
 			g.player.Move(-1)
 		}
 	}
 	return nil
 }
-
-// func (g *Game) asd() {
-// 	for i := -30; i <= 30; i++ {
-// 		rayAngle := raycasting.NormalizeAngle(g.player.Angle + (float64(i) * raycasting.DEG_TO_RAD))
-// 		coordinate, _, _ := raycasting.CastRay(*g.player.coordinate, rayAngle, BLOCK_SIZE, g.mab)
-// 		if !coordinate.IsInvalid() {
-// 		}
-// 	}
-// }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	coords := make([]raycasting.Coordinate, NO_OF_RAYS)
@@ -76,11 +67,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	for i := -DEG_BOUNDS; i <= DEG_BOUNDS; i++ {
 		rayAngle := raycasting.NormalizeAngle(g.player.Angle + (float64(i) * DEG_PER_RAY * raycasting.DEG_TO_RAD))
-		coordinate, direction, _ := raycasting.CastRay(*g.player.coordinate, rayAngle, BLOCK_SIZE, g.mab)
-		coords[i+DEG_BOUNDS] = coordinate
+		ray, err := raycasting.CastRay(*g.player.coordinate, rayAngle, BLOCK_SIZE, g.mab)
+		if err != nil {
+			continue
+		}
+		coords[i+DEG_BOUNDS] = ray.C
 		noFish := math.Cos(raycasting.NormalizeAngle(g.player.Angle - rayAngle))
-		rayDistances[i+DEG_BOUNDS] = float32(coordinate.DistanceTo(*g.player.coordinate) * noFish)
-		directions[i+DEG_BOUNDS] = direction
+		rayDistances[i+DEG_BOUNDS] = float32(ray.C.DistanceTo(*g.player.coordinate) * noFish)
+		directions[i+DEG_BOUNDS] = ray.D
 	}
 
 	if g.represntation == 0 {
