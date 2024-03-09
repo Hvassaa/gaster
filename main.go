@@ -30,6 +30,7 @@ type Game struct {
 	cursorX, cursorY int
 	yMod             float32
 	Paused           bool
+	r3d              *Renderer3D
 }
 
 func (g *Game) Update() error {
@@ -84,12 +85,12 @@ func (g *Game) Update() error {
 	// move forward or backwards with keyboard
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
 		ray, err := raycasting.CastRay(*g.player.coordinate, g.player.Angle, BLOCK_SIZE, g.mab)
-		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE / 2 {
+		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
 			g.player.Move(1)
 		}
 	} else if ebiten.IsKeyPressed(ebiten.KeyS) {
 		ray, err := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+raycasting.PI), BLOCK_SIZE, g.mab)
-		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE / 2 {
+		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
 			g.player.Move(-1)
 		}
 	}
@@ -98,13 +99,13 @@ func (g *Game) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeyA) {
 		angle := -raycasting.PI_HALF
 		ray, err := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+angle), BLOCK_SIZE, g.mab)
-		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE / 2 {
+		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
 			g.player.MoveWithAngle(1, angle)
 		}
 	} else if ebiten.IsKeyPressed(ebiten.KeyD) {
 		angle := raycasting.PI_HALF
 		ray, err := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+angle), BLOCK_SIZE, g.mab)
-		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE / 2 {
+		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
 			g.player.MoveWithAngle(1, angle)
 		}
 	}
@@ -113,6 +114,10 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	if g.r3d == nil {
+		g.r3d = NewRenderer3D(screen, NO_OF_RAYS)
+	}
+
 	coords := make([]raycasting.Coordinate, NO_OF_RAYS)
 	rayDistances := make([]float32, NO_OF_RAYS)
 	directions := make([]raycasting.Direction, NO_OF_RAYS)
@@ -147,7 +152,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		twoDScreen.Fill(color.Black)
 
 		// 3D drawing
-		g.draw3d(screen, rayDistances, directions)
+		g.Render3D(rayDistances, directions)
 
 		// 2D drawing
 		twoDScreen.Fill(color.RGBA{0, 0, 0, 0})
@@ -178,12 +183,15 @@ func makeStandardMap() [][]raycasting.WallType {
 }
 
 func main() {
+	// initialize some ebiten options
 	ebiten.SetWindowSize(1600, 800)
-	mab := makeStandardMap()
 	ebiten.SetCursorMode(ebiten.CursorModeCaptured)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetFullscreen(true)
+	ebiten.SetScreenClearedEveryFrame(false)
 
+	// create some map
+	mab := makeStandardMap()
 	mab[1][7] = 1
 	mab[2][7] = 1
 	mab[3][7] = 1
@@ -195,7 +203,6 @@ func main() {
 	mab[4][12] = 1
 	mab[4][13] = 1
 	mab[4][14] = 1
-
 	mab[13][14] = 1
 	mab[14][14] = 1
 	mab[15][14] = 1
@@ -204,6 +211,7 @@ func main() {
 	mab[16][12] = 1
 	mab[16][11] = 1
 
+	// create the game struct
 	game := &Game{
 		player: &Player{
 			coordinate: &raycasting.Coordinate{
@@ -217,6 +225,7 @@ func main() {
 		represntation: 2,
 	}
 
+	// run the main loop
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
