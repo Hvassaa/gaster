@@ -22,7 +22,7 @@ func (g *Game) draw3d(screen *ebiten.Image, rayDistances []float32, directions [
 	renderMiddle := (float32(screenHeight) / 2) + g.yMod
 
 	topColor := color.RGBA{50, 150, 150, 255}
-	vector.DrawFilledRect(screen, 0, renderMiddle, float32(screnWidth), -float32(screenHeight), topColor, false)
+	vector.DrawFilledRect(screen, 0, renderMiddle, float32(screnWidth), -float32(screenHeight)*4, topColor, false)
 
 	for i, rayDist := range rayDistances {
 		columnColor := color.RGBA{255, 0, 0, 255}

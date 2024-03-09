@@ -18,7 +18,7 @@ const (
 	BLOCKS_X     int = WORLD_WIDTH / BLOCK_SIZE
 	BLOCKS_Y     int = WORLD_HEIGHT / BLOCK_SIZE
 	FOV              = 60
-	NO_OF_RAYS       = (60 * 4) + 1
+	NO_OF_RAYS       = 101
 	DEG_BOUNDS       = (NO_OF_RAYS - 1) / 2
 	DEG_PER_RAY      = FOV / (NO_OF_RAYS - 1.)
 )
@@ -29,11 +29,25 @@ type Game struct {
 	represntation    int
 	cursorX, cursorY int
 	yMod             float32
+	Paused           bool
 }
 
 func (g *Game) Update() error {
-	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
+	if ebiten.IsKeyPressed(ebiten.KeyBackspace) {
 		os.Exit(0)
+	}
+
+	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
+		g.Paused = true
+		ebiten.SetCursorMode(ebiten.CursorModeVisible)
+	} else if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+		g.Paused = false
+		ebiten.SetCursorMode(ebiten.CursorModeCaptured)
+		g.cursorX, g.cursorY = ebiten.CursorPosition()
+	}
+
+	if g.Paused {
+		return nil
 	}
 	if ebiten.IsKeyPressed(ebiten.Key1) {
 		g.represntation = 0
@@ -50,7 +64,7 @@ func (g *Game) Update() error {
 
 	// Update y, to look up or down
 	if deltaY != 0 && g.cursorY != 0 {
-		g.yMod = max(min(g.yMod + float32(deltaY) * 3, 350), -350)
+		g.yMod = max(min(g.yMod+float32(deltaY)*3, 500), -500)
 	}
 
 	// update mouse position
@@ -70,12 +84,12 @@ func (g *Game) Update() error {
 	// move forward or backwards with keyboard
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
 		ray, err := raycasting.CastRay(*g.player.coordinate, g.player.Angle, BLOCK_SIZE, g.mab)
-		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE {
+		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE / 2 {
 			g.player.Move(1)
 		}
 	} else if ebiten.IsKeyPressed(ebiten.KeyS) {
 		ray, err := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+raycasting.PI), BLOCK_SIZE, g.mab)
-		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE {
+		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE / 2 {
 			g.player.Move(-1)
 		}
 	}
@@ -84,13 +98,13 @@ func (g *Game) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeyA) {
 		angle := -raycasting.PI_HALF
 		ray, err := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+angle), BLOCK_SIZE, g.mab)
-		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE {
+		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE / 2 {
 			g.player.MoveWithAngle(1, angle)
 		}
 	} else if ebiten.IsKeyPressed(ebiten.KeyD) {
 		angle := raycasting.PI_HALF
 		ray, err := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+angle), BLOCK_SIZE, g.mab)
-		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE {
+		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE / 2 {
 			g.player.MoveWithAngle(1, angle)
 		}
 	}
@@ -167,6 +181,8 @@ func main() {
 	ebiten.SetWindowSize(1600, 800)
 	mab := makeStandardMap()
 	ebiten.SetCursorMode(ebiten.CursorModeCaptured)
+	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
+	ebiten.SetFullscreen(true)
 
 	mab[1][7] = 1
 	mab[2][7] = 1
