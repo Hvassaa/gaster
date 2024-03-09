@@ -28,6 +28,7 @@ type Game struct {
 	mab              [][]raycasting.WallType
 	represntation    int
 	cursorX, cursorY int
+	yMod             float32
 }
 
 func (g *Game) Update() error {
@@ -42,19 +43,31 @@ func (g *Game) Update() error {
 		g.represntation = 2
 	}
 
+	// calculate mouse deltas
 	newCursorX, newCursorY := ebiten.CursorPosition()
 	deltaX := g.cursorX - newCursorX
-	// deltaY := g.cursorY - newCursorY
+	deltaY := g.cursorY - newCursorY
+
+	// Update y, to look up or down
+	if deltaY != 0 && g.cursorY != 0 {
+		g.yMod = g.yMod + float32(deltaY)
+	}
+
+	// update mouse position
 	g.cursorX, g.cursorY = newCursorX, newCursorY
-	multiplier := 1.
+
+	// look left or right with mouse
+	xMultiplier := 1.
 	if deltaX != 0 {
-		multiplier += math.Abs(float64(deltaX)) / 150.
+		xMultiplier += math.Abs(float64(deltaX)) / 150.
 	}
-	if ebiten.IsKeyPressed(ebiten.KeyA) || deltaX > 0 {
-		g.player.IncreaseAngle(-0.05 * multiplier)
-	} else if ebiten.IsKeyPressed(ebiten.KeyD) || deltaX < 0 {
-		g.player.IncreaseAngle(0.05 * multiplier)
+	if deltaX > 0 {
+		g.player.IncreaseAngle(-0.05 * xMultiplier)
+	} else if deltaX < 0 {
+		g.player.IncreaseAngle(0.05 * xMultiplier)
 	}
+
+	// move forward or backwards with keyboard
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
 		ray, err := raycasting.CastRay(*g.player.coordinate, g.player.Angle, BLOCK_SIZE, g.mab)
 		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE {
@@ -66,6 +79,22 @@ func (g *Game) Update() error {
 			g.player.Move(-1)
 		}
 	}
+
+	// strafe
+	if ebiten.IsKeyPressed(ebiten.KeyA) {
+		angle := -raycasting.PI_HALF
+		ray, err := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+angle), BLOCK_SIZE, g.mab)
+		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE {
+			g.player.MoveWithAngle(1, angle)
+		}
+	} else if ebiten.IsKeyPressed(ebiten.KeyD) {
+		angle := raycasting.PI_HALF
+		ray, err := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+angle), BLOCK_SIZE, g.mab)
+		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE {
+			g.player.MoveWithAngle(1, angle)
+		}
+	}
+
 	return nil
 }
 
@@ -82,7 +111,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 		coords[i+DEG_BOUNDS] = ray.C
 		noFish := math.Cos(raycasting.NormalizeAngle(rayAngle - g.player.Angle))
-		// noFish := math.Cos(raycasting.NormalizeAngle(g.player.Angle - rayAngle))
 		rayDistances[i+DEG_BOUNDS] = float32(ray.C.DistanceTo(*g.player.coordinate) * noFish)
 		directions[i+DEG_BOUNDS] = ray.D
 	}

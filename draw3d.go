@@ -17,9 +17,12 @@ func (g *Game) draw3d(screen *ebiten.Image, rayDistances []float32, directions [
 	screnWidth := screenSize.X
 	screenHeight := screenSize.Y
 	columnWidth := float32(screnWidth) / NO_OF_RAYS
+	// we render walls "half up and down" from this point
+	// we initially set it to the middle of the screen
+	renderMiddle := (float32(screenHeight) / 2) + g.yMod
 
 	topColor := color.RGBA{50, 150, 150, 255}
-	vector.DrawFilledRect(screen, 0, float32(screenHeight) / 2, float32(screnWidth), -float32(screenHeight) / 2, topColor, false)
+	vector.DrawFilledRect(screen, 0, renderMiddle, float32(screnWidth), -float32(screenHeight), topColor, false)
 
 	for i, rayDist := range rayDistances {
 		columnColor := color.RGBA{255, 0, 0, 255}
@@ -31,8 +34,8 @@ func (g *Game) draw3d(screen *ebiten.Image, rayDistances []float32, directions [
 		columnHeight := float32(screenHeight) / rayDist
 		columnHeight *= 70
 		x := float32(xStart) + float32(i)*columnWidth
-		var y1 float32 = float32(screenHeight)/2 - columnHeight/2
-		var y2 float32 = float32(screenHeight)/2 + columnHeight/2
+		var y1 float32 = renderMiddle - columnHeight/2
+		var y2 float32 = renderMiddle + columnHeight/2
 		vector.StrokeLine(screen, x, y1, x, y2, columnWidth, columnColor, false)
 	}
 }
