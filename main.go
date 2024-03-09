@@ -24,9 +24,10 @@ const (
 )
 
 type Game struct {
-	player        *Player
-	mab           [][]raycasting.WallType
-	represntation int
+	player           *Player
+	mab              [][]raycasting.WallType
+	represntation    int
+	cursorX, cursorY int
 }
 
 func (g *Game) Update() error {
@@ -41,10 +42,18 @@ func (g *Game) Update() error {
 		g.represntation = 2
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyA) {
-		g.player.IncreaseAngle(-0.05)
-	} else if ebiten.IsKeyPressed(ebiten.KeyD) {
-		g.player.IncreaseAngle(0.05)
+	newCursorX, newCursorY := ebiten.CursorPosition()
+	deltaX := g.cursorX - newCursorX
+	// deltaY := g.cursorY - newCursorY
+	g.cursorX, g.cursorY = newCursorX, newCursorY
+	multiplier := 1.
+	if deltaX != 0 {
+		multiplier += math.Abs(float64(deltaX)) / 150.
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyA) || deltaX > 0 {
+		g.player.IncreaseAngle(-0.05 * multiplier)
+	} else if ebiten.IsKeyPressed(ebiten.KeyD) || deltaX < 0 {
+		g.player.IncreaseAngle(0.05 * multiplier)
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
 		ray, err := raycasting.CastRay(*g.player.coordinate, g.player.Angle, BLOCK_SIZE, g.mab)
@@ -129,6 +138,7 @@ func makeStandardMap() [][]raycasting.WallType {
 func main() {
 	ebiten.SetWindowSize(1600, 800)
 	mab := makeStandardMap()
+	ebiten.SetCursorMode(ebiten.CursorModeCaptured)
 
 	mab[1][7] = 1
 	mab[2][7] = 1
@@ -159,7 +169,8 @@ func main() {
 			Angle: 0,
 			Speed: 10.,
 		},
-		mab: mab,
+		mab:           mab,
+		represntation: 2,
 	}
 
 	if err := ebiten.RunGame(game); err != nil {
