@@ -18,7 +18,7 @@ const (
 	BLOCKS_X     int = WORLD_WIDTH / BLOCK_SIZE
 	BLOCKS_Y     int = WORLD_HEIGHT / BLOCK_SIZE
 	FOV              = 60
-	NO_OF_RAYS       = 121
+	NO_OF_RAYS       = (60 * 4) + 1
 	DEG_BOUNDS       = (NO_OF_RAYS - 1) / 2
 	DEG_PER_RAY      = FOV / (NO_OF_RAYS - 1.)
 )
@@ -72,7 +72,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			continue
 		}
 		coords[i+DEG_BOUNDS] = ray.C
-		noFish := math.Cos(raycasting.NormalizeAngle(g.player.Angle - rayAngle))
+		noFish := math.Cos(raycasting.NormalizeAngle(rayAngle - g.player.Angle))
+		// noFish := math.Cos(raycasting.NormalizeAngle(g.player.Angle - rayAngle))
 		rayDistances[i+DEG_BOUNDS] = float32(ray.C.DistanceTo(*g.player.coordinate) * noFish)
 		directions[i+DEG_BOUNDS] = ray.D
 	}
