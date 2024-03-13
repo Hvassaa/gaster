@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"log"
@@ -65,21 +66,22 @@ func (g *Game) Update() error {
 
 	// Update y, to look up or down
 	if deltaY != 0 && g.cursorY != 0 {
-		g.yMod = max(min(g.yMod+float32(deltaY)*3, 500), -500)
+		g.yMod = max(min(g.yMod + float32(deltaY) / 2., 180), -180)
 	}
 
 	// update mouse position
 	g.cursorX, g.cursorY = newCursorX, newCursorY
 
 	// look left or right with mouse
-	xMultiplier := 1.
+	xMultiplier := 0.
 	if deltaX != 0 {
-		xMultiplier += math.Abs(float64(deltaX)) / 80.
+		xMultiplier += float64(deltaX)/-2. * raycasting.DEG_TO_RAD
+		fmt.Println(xMultiplier)
 	}
 	if deltaX > 0 {
-		g.player.IncreaseAngle(-0.05 * xMultiplier)
+		g.player.IncreaseAngle(xMultiplier)
 	} else if deltaX < 0 {
-		g.player.IncreaseAngle(0.05 * xMultiplier)
+		g.player.IncreaseAngle(xMultiplier)
 	}
 
 	// move forward or backwards with keyboard
@@ -187,7 +189,7 @@ func main() {
 	ebiten.SetWindowSize(1600, 800)
 	ebiten.SetCursorMode(ebiten.CursorModeCaptured)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-	ebiten.SetFullscreen(true)
+	// ebiten.SetFullscreen(true)
 	ebiten.SetScreenClearedEveryFrame(false)
 
 	// create some map

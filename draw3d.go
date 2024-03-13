@@ -43,7 +43,7 @@ func (g *Game) Render3D(rayDistances []float32, directions []raycasting.Directio
 	xStart := r3d.Screen.Bounds().Min.X
 	// we render walls "half up and down" from this point
 	// we initially set it to the middle of the screen
-	renderMiddle := r3d.ScreenMid + g.yMod
+	renderMiddle := r3d.ScreenMid + g.yMod * g.r3d.ScreenHeight * 3 / 180
 
 	vector.DrawFilledRect(r3d.Screen, 0, renderMiddle, r3d.ScreenWidth, -r3d.ScreenHeight*4, r3d.TopColor, false)
 
@@ -70,11 +70,11 @@ func (g *Game) draw3d(screen *ebiten.Image, rayDistances []float32, directions [
 	xStart := screen.Bounds().Min.X
 	screenSize := screen.Bounds().Size()
 	screnWidth := screenSize.X
-	screenHeight := screenSize.Y
+	screenHeight := float32(screenSize.Y)
 	columnWidth := float32(screnWidth) / NO_OF_RAYS
 	// we render walls "half up and down" from this point
 	// we initially set it to the middle of the screen
-	renderMiddle := (float32(screenHeight) / 2) + g.yMod
+	renderMiddle := (screenHeight / 2) + g.yMod
 
 	topColor := color.RGBA{50, 150, 150, 255}
 	vector.DrawFilledRect(screen, 0, renderMiddle, float32(screnWidth), -float32(screenHeight)*4, topColor, false)
