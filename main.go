@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"image"
-	"image/color"
 	"log"
 	"math"
 	"os"
@@ -19,7 +17,7 @@ const (
 	BLOCKS_X     int = WORLD_WIDTH / BLOCK_SIZE
 	BLOCKS_Y     int = WORLD_HEIGHT / BLOCK_SIZE
 	FOV              = 60
-	NO_OF_RAYS       = 101
+	NO_OF_RAYS       = 61
 	DEG_BOUNDS       = (NO_OF_RAYS - 1) / 2
 	DEG_PER_RAY      = FOV / (NO_OF_RAYS - 1.)
 )
@@ -32,6 +30,8 @@ type Game struct {
 	yMod             float32
 	Paused           bool
 	r3d              *Renderer3D
+	r2d              *Renderer2D
+	updateRenders    bool
 }
 
 func (g *Game) Update() error {
@@ -53,10 +53,13 @@ func (g *Game) Update() error {
 	}
 	if ebiten.IsKeyPressed(ebiten.Key1) {
 		g.represntation = 0
+		g.updateRenders = true
 	} else if ebiten.IsKeyPressed(ebiten.Key2) {
 		g.represntation = 1
+		g.updateRenders = true
 	} else if ebiten.IsKeyPressed(ebiten.Key3) {
 		g.represntation = 2
+		g.updateRenders = true
 	}
 
 	// calculate mouse deltas
@@ -66,7 +69,7 @@ func (g *Game) Update() error {
 
 	// Update y, to look up or down
 	if deltaY != 0 && g.cursorY != 0 {
-		g.yMod = max(min(g.yMod + float32(deltaY) / 2., 180), -180)
+		g.yMod = max(min(g.yMod+float32(deltaY)/2., 180), -180)
 	}
 
 	// update mouse position
@@ -75,8 +78,7 @@ func (g *Game) Update() error {
 	// look left or right with mouse
 	xMultiplier := 0.
 	if deltaX != 0 {
-		xMultiplier += float64(deltaX)/-2. * raycasting.DEG_TO_RAD
-		fmt.Println(xMultiplier)
+		xMultiplier += float64(deltaX) / -2. * raycasting.DEG_TO_RAD
 	}
 	if deltaX > 0 {
 		g.player.IncreaseAngle(xMultiplier)
@@ -116,10 +118,6 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	if g.r3d == nil {
-		g.r3d = NewRenderer3D(screen, NO_OF_RAYS)
-	}
-
 	coords := make([]raycasting.Coordinate, NO_OF_RAYS)
 	rayDistances := make([]float32, NO_OF_RAYS)
 	directions := make([]raycasting.Direction, NO_OF_RAYS)
@@ -137,30 +135,34 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	if g.represntation == 0 {
-		twoDScreen := screen.SubImage(image.Rect(0, 0, WORLD_WIDTH, WORLD_HEIGHT)).(*ebiten.Image)
-		maxX := screen.Bounds().Max.X
-		threeDScreen := screen.SubImage(image.Rect(WORLD_WIDTH, 0, maxX, WORLD_HEIGHT)).(*ebiten.Image)
+		if g.updateRenders {
+			width := screen.Bounds().Dx()
+			height := screen.Bounds().Dy()
+			twoDScreen := screen.SubImage(image.Rect(0, 0, width/2, height)).(*ebiten.Image)
+			threeDScreen := screen.SubImage(image.Rect(width/2, 0, width, height)).(*ebiten.Image)
+			g.r2d = NewRenderer2D(twoDScreen)
+			g.r3d = NewRenderer3D(threeDScreen, NO_OF_RAYS)
+			g.updateRenders = false
+		}
 
-		// 2D drawing
-		g.Draw2DWalls(twoDScreen)
-		g.Draw2DPlayer(twoDScreen, coords)
-
-		// 3D drawing
-		g.draw3d(threeDScreen, rayDistances, directions)
-	} else if g.represntation == 1 {
-		g.draw3d(screen, rayDistances, directions)
-	} else if g.represntation == 2 {
-		twoDScreen := screen.SubImage(image.Rect(0, 0, 300, 300)).(*ebiten.Image)
-		twoDScreen.Fill(color.Black)
-
-		// 3D drawing
 		g.Render3D(rayDistances, directions)
+		g.Render2D(coords)
+	} else if g.represntation == 1 {
+		if g.updateRenders {
+			g.r3d = NewRenderer3D(screen, NO_OF_RAYS)
+			g.updateRenders = false
+		}
+		g.Render3D(rayDistances, directions)
+	} else if g.represntation == 2 {
+		if g.updateRenders {
+			twoDScreen := screen.SubImage(image.Rect(0, 0, 300, 300)).(*ebiten.Image)
+			g.r2d = NewRenderer2D(twoDScreen)
+			g.r3d = NewRenderer3D(screen, NO_OF_RAYS)
+			g.updateRenders = false
+		}
 
-		// 2D drawing
-		twoDScreen.Fill(color.RGBA{0, 0, 0, 0})
-		g.Draw2DWalls(twoDScreen)
-		g.Draw2DPlayer(twoDScreen, coords)
-
+		g.Render3D(rayDistances, directions)
+		g.Render2D(coords)
 	}
 }
 
@@ -225,6 +227,7 @@ func main() {
 		},
 		mab:           mab,
 		represntation: 2,
+		updateRenders: true,
 	}
 
 	// run the main loop
