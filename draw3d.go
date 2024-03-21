@@ -2,6 +2,7 @@ package main
 
 import (
 	"image/color"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
@@ -35,31 +36,52 @@ func NewRenderer3D(screen *ebiten.Image, noOfRays int) *Renderer3D {
 	}
 }
 
-func (g *Game) Render3D(rayDistances []float32, directions []raycasting.Direction) {
+func (g *Game) Render3D(rayDistances []float32, directions []raycasting.Direction, coords []raycasting.Coordinate) {
 	r3d := g.r3d
+	a := [][]int {
+		{0, 255},
+		{255, 0},
+	}
+	_ = a
 
 	r3d.Screen.Fill(r3d.BottomColor)
 
 	xStart := r3d.Screen.Bounds().Min.X
 	// we render walls "half up and down" from this point
 	// we initially set it to the middle of the screen
-	renderMiddle := r3d.ScreenMid + g.yMod * g.r3d.ScreenHeight * 3 / 180
+	renderMiddle := r3d.ScreenMid + g.yMod*g.r3d.ScreenHeight*3/180
 
 	vector.DrawFilledRect(r3d.Screen, 0, renderMiddle, r3d.ScreenWidth, -r3d.ScreenHeight*4, r3d.TopColor, false)
 
 	for i, rayDist := range rayDistances {
-		columnColor := color.RGBA{255, 0, 0, 255}
+		columnColor := color.RGBA{0, 0, 0, 255}
+		coord := coords[i]
+		var blockDiff float64
 		if directions[i] == raycasting.HORIZONTAL {
+			blockDiff = math.Mod(coord.X, BLOCK_SIZE)
 			columnColor.R = 150
+		} else {
+			blockDiff = math.Mod(coord.Y, BLOCK_SIZE)
 		}
 
 		// this avoid fisheye on "side walls"
 		columnHeight := r3d.ScreenHeight / rayDist
 		columnHeight *= 70
 		x := float32(xStart) + float32(i)*r3d.ColumnWidth
-		var y1 float32 = renderMiddle - columnHeight/2
-		var y2 float32 = renderMiddle + columnHeight/2
-		vector.StrokeLine(r3d.Screen, x, y1, x, y2, r3d.ColumnWidth, columnColor, false)
+
+		m := len(a)
+		top := renderMiddle - columnHeight/2
+		vertSlice := columnHeight / float32(m)
+		for j := 0; j < m; j++ {
+			fj := float32(j)
+			var y1 float32 = top + vertSlice*fj
+			var y2 float32 = y1 + vertSlice
+			columnColor.G = uint8(j) * (255 / uint8(m))
+			if blockDiff > BLOCK_SIZE/2 {
+				columnColor.B = 255
+			}
+			vector.StrokeLine(r3d.Screen, x, y1, x, y2, r3d.ColumnWidth, columnColor, false)
+		}
 	}
 }
 

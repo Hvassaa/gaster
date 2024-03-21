@@ -145,14 +145,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			g.updateRenders = false
 		}
 
-		g.Render3D(rayDistances, directions)
+		g.Render3D(rayDistances, directions, coords)
 		g.Render2D(coords)
 	} else if g.represntation == 1 {
 		if g.updateRenders {
 			g.r3d = NewRenderer3D(screen, NO_OF_RAYS)
 			g.updateRenders = false
 		}
-		g.Render3D(rayDistances, directions)
+		g.Render3D(rayDistances, directions, coords)
 	} else if g.represntation == 2 {
 		if g.updateRenders {
 			twoDScreen := screen.SubImage(image.Rect(0, 0, 300, 300)).(*ebiten.Image)
@@ -161,7 +161,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			g.updateRenders = false
 		}
 
-		g.Render3D(rayDistances, directions)
+		g.Render3D(rayDistances, directions, coords)
 		g.Render2D(coords)
 	}
 }
