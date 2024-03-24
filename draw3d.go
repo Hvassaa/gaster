@@ -36,13 +36,32 @@ func NewRenderer3D(screen *ebiten.Image, noOfRays int) *Renderer3D {
 	}
 }
 
-func (g *Game) Render3D(rayDistances []float32, directions []raycasting.Direction, coords []raycasting.Coordinate) {
+func (g *Game) Render3D(rayDistances []float32, directions []raycasting.Direction, coords []raycasting.Coordinate, rays []Ray) {
 	r3d := g.r3d
-	a := [][]int {
-		{0, 255},
-		{255, 0},
+	b := [][]uint8{
+		{20, 40, 60, 80, 100, 120, 140, 160, 180, 200},
+		{200, 180, 160, 140, 120, 100, 80, 60, 40, 20},
+		{20, 40, 60, 80, 100, 120, 140, 160, 180, 200},
+		{200, 180, 160, 140, 120, 100, 80, 60, 40, 20},
+		{20, 40, 60, 80, 100, 120, 140, 160, 180, 200},
+		{200, 180, 160, 140, 120, 100, 80, 60, 40, 20},
+		{20, 40, 60, 80, 100, 120, 140, 160, 180, 200},
+		{200, 180, 160, 140, 120, 100, 80, 60, 40, 20},
+		{20, 40, 60, 80, 100, 120, 140, 160, 180, 200},
+		{200, 180, 160, 140, 120, 100, 80, 60, 40, 20},
 	}
-	_ = a
+	b = [][]uint8{
+		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+		{0, 255, 255, 255, 255, 255, 255, 255, 255, 0},
+		{0, 255, 255, 255, 255, 255, 255, 255, 255, 0},
+		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+	}
 
 	r3d.Screen.Fill(r3d.BottomColor)
 
@@ -55,13 +74,14 @@ func (g *Game) Render3D(rayDistances []float32, directions []raycasting.Directio
 
 	for i, rayDist := range rayDistances {
 		columnColor := color.RGBA{0, 0, 0, 255}
+		ray := rays[i]
 		coord := coords[i]
-		var blockDiff float64
+		var xPosOnBlock float64
 		if directions[i] == raycasting.HORIZONTAL {
-			blockDiff = math.Mod(coord.X, BLOCK_SIZE)
-			columnColor.R = 150
+			xPosOnBlock = math.Mod(coord.X, BLOCK_SIZE)
+			columnColor.R = 50
 		} else {
-			blockDiff = math.Mod(coord.Y, BLOCK_SIZE)
+			xPosOnBlock = math.Mod(coord.Y, BLOCK_SIZE)
 		}
 
 		// this avoid fisheye on "side walls"
@@ -69,20 +89,35 @@ func (g *Game) Render3D(rayDistances []float32, directions []raycasting.Directio
 		columnHeight *= 70
 		x := float32(xStart) + float32(i)*r3d.ColumnWidth
 
-		m := len(a)
+		yTextureListSize := len(b)
+		xTextureListSize := len(b[0])
+		xTextureSliceSize := BLOCK_SIZE / float64(xTextureListSize)
+		xTextureIdx := int(math.Floor(xPosOnBlock / xTextureSliceSize))
 		top := renderMiddle - columnHeight/2
-		vertSlice := columnHeight / float32(m)
-		for j := 0; j < m; j++ {
-			fj := float32(j)
-			var y1 float32 = top + vertSlice*fj
+		vertSlice := columnHeight / float32(yTextureListSize)
+		for j := 0; j < yTextureListSize; j++ {
+			fj := float64(j)
+			var y1 float32 = top + vertSlice*float32(fj)
 			var y2 float32 = y1 + vertSlice
-			columnColor.G = uint8(j) * (255 / uint8(m))
-			if blockDiff > BLOCK_SIZE/2 {
-				columnColor.B = 255
+			yTextureIdx := j
+			angle := ray.Angle
+			leftWallHit := angle > raycasting.PI_HALF && angle < raycasting.PI_THREE_HALF && ray.Direction == raycasting.VERTICAL
+			bottomWallHit := angle < raycasting.PI && ray.Direction == raycasting.HORIZONTAL
+			if leftWallHit || bottomWallHit {
+				// when the way is left or down, the texture is mirrored
+				columnColor.B = b[yTextureIdx][xTextureListSize-xTextureIdx-1]
+			} else {
+				columnColor.B = b[yTextureIdx][xTextureIdx]
 			}
 			vector.StrokeLine(r3d.Screen, x, y1, x, y2, r3d.ColumnWidth, columnColor, false)
 		}
 	}
+}
+
+func getYidx(j, textureYSize int) int {
+	fj := float64(j)
+	noOfSlices := BLOCK_SIZE / float64(textureYSize)
+	return int(math.Floor((fj * noOfSlices) / noOfSlices))
 }
 
 func (g *Game) draw3d(screen *ebiten.Image, rayDistances []float32, directions []raycasting.Direction) {

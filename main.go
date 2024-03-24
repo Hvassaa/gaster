@@ -17,7 +17,7 @@ const (
 	BLOCKS_X     int = WORLD_WIDTH / BLOCK_SIZE
 	BLOCKS_Y     int = WORLD_HEIGHT / BLOCK_SIZE
 	FOV              = 60
-	NO_OF_RAYS       = 61
+	NO_OF_RAYS       = 101
 	DEG_BOUNDS       = (NO_OF_RAYS - 1) / 2
 	DEG_PER_RAY      = FOV / (NO_OF_RAYS - 1.)
 )
@@ -117,11 +117,17 @@ func (g *Game) Update() error {
 	return nil
 }
 
+type Ray struct {
+	Angle, Distance float64
+	Direction       raycasting.Direction
+	Coordinate      raycasting.Coordinate
+}
+
 func (g *Game) Draw(screen *ebiten.Image) {
 	coords := make([]raycasting.Coordinate, NO_OF_RAYS)
 	rayDistances := make([]float32, NO_OF_RAYS)
 	directions := make([]raycasting.Direction, NO_OF_RAYS)
-
+	rays := make([]Ray, NO_OF_RAYS)
 	for i := -DEG_BOUNDS; i <= DEG_BOUNDS; i++ {
 		rayAngle := raycasting.NormalizeAngle(g.player.Angle + (float64(i) * DEG_PER_RAY * raycasting.DEG_TO_RAD))
 		ray, err := raycasting.CastRay(*g.player.coordinate, rayAngle, BLOCK_SIZE, g.mab)
@@ -132,6 +138,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		noFish := math.Cos(raycasting.NormalizeAngle(rayAngle - g.player.Angle))
 		rayDistances[i+DEG_BOUNDS] = float32(ray.C.DistanceTo(*g.player.coordinate) * noFish)
 		directions[i+DEG_BOUNDS] = ray.D
+		rays[i+DEG_BOUNDS] = Ray{
+			Angle:      rayAngle,
+			Distance:   ray.C.DistanceTo(*g.player.coordinate) * noFish,
+			Direction:  ray.D,
+			Coordinate: ray.C,
+		}
 	}
 
 	if g.represntation == 0 {
@@ -145,14 +157,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			g.updateRenders = false
 		}
 
-		g.Render3D(rayDistances, directions, coords)
+		g.Render3D(rayDistances, directions, coords, rays)
 		g.Render2D(coords)
 	} else if g.represntation == 1 {
 		if g.updateRenders {
 			g.r3d = NewRenderer3D(screen, NO_OF_RAYS)
 			g.updateRenders = false
 		}
-		g.Render3D(rayDistances, directions, coords)
+		g.Render3D(rayDistances, directions, coords, rays)
 	} else if g.represntation == 2 {
 		if g.updateRenders {
 			twoDScreen := screen.SubImage(image.Rect(0, 0, 300, 300)).(*ebiten.Image)
@@ -161,7 +173,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			g.updateRenders = false
 		}
 
-		g.Render3D(rayDistances, directions, coords)
+		g.Render3D(rayDistances, directions, coords, rays)
 		g.Render2D(coords)
 	}
 }
