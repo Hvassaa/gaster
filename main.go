@@ -17,7 +17,7 @@ const (
 	BLOCKS_X     int = WORLD_WIDTH / BLOCK_SIZE
 	BLOCKS_Y     int = WORLD_HEIGHT / BLOCK_SIZE
 	FOV              = 60
-	NO_OF_RAYS       = 101
+	NO_OF_RAYS       = 401
 	DEG_BOUNDS       = (NO_OF_RAYS - 1) / 2
 	DEG_PER_RAY      = FOV / (NO_OF_RAYS - 1.)
 )
@@ -89,12 +89,12 @@ func (g *Game) Update() error {
 	// move forward or backwards with keyboard
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
 		ray, err := raycasting.CastRay(*g.player.coordinate, g.player.Angle, BLOCK_SIZE, g.mab)
-		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
+		if err == nil && ray.Coord.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
 			g.player.Move(1)
 		}
 	} else if ebiten.IsKeyPressed(ebiten.KeyS) {
 		ray, err := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+raycasting.PI), BLOCK_SIZE, g.mab)
-		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
+		if err == nil && ray.Coord.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
 			g.player.Move(-1)
 		}
 	}
@@ -103,13 +103,13 @@ func (g *Game) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeyA) {
 		angle := -raycasting.PI_HALF
 		ray, err := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+angle), BLOCK_SIZE, g.mab)
-		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
+		if err == nil && ray.Coord.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
 			g.player.MoveWithAngle(1, angle)
 		}
 	} else if ebiten.IsKeyPressed(ebiten.KeyD) {
 		angle := raycasting.PI_HALF
 		ray, err := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+angle), BLOCK_SIZE, g.mab)
-		if err == nil && ray.C.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
+		if err == nil && ray.Coord.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
 			g.player.MoveWithAngle(1, angle)
 		}
 	}
@@ -117,33 +117,28 @@ func (g *Game) Update() error {
 	return nil
 }
 
-type Ray struct {
-	Angle, Distance float64
-	Direction       raycasting.Direction
-	Coordinate      raycasting.Coordinate
-}
+// type Ray struct {
+// 	Angle, Distance float64
+// 	Direction       raycasting.Direction
+// 	Coordinate      raycasting.Coordinate
+// }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	coords := make([]raycasting.Coordinate, NO_OF_RAYS)
 	rayDistances := make([]float32, NO_OF_RAYS)
 	directions := make([]raycasting.Direction, NO_OF_RAYS)
-	rays := make([]Ray, NO_OF_RAYS)
+	rays := make([]raycasting.Ray, NO_OF_RAYS)
 	for i := -DEG_BOUNDS; i <= DEG_BOUNDS; i++ {
 		rayAngle := raycasting.NormalizeAngle(g.player.Angle + (float64(i) * DEG_PER_RAY * raycasting.DEG_TO_RAD))
 		ray, err := raycasting.CastRay(*g.player.coordinate, rayAngle, BLOCK_SIZE, g.mab)
 		if err != nil {
 			continue
 		}
-		coords[i+DEG_BOUNDS] = ray.C
+		coords[i+DEG_BOUNDS] = ray.Coord
 		noFish := math.Cos(raycasting.NormalizeAngle(rayAngle - g.player.Angle))
-		rayDistances[i+DEG_BOUNDS] = float32(ray.C.DistanceTo(*g.player.coordinate) * noFish)
-		directions[i+DEG_BOUNDS] = ray.D
-		rays[i+DEG_BOUNDS] = Ray{
-			Angle:      rayAngle,
-			Distance:   ray.C.DistanceTo(*g.player.coordinate) * noFish,
-			Direction:  ray.D,
-			Coordinate: ray.C,
-		}
+		rayDistances[i+DEG_BOUNDS] = float32(ray.Coord.DistanceTo(*g.player.coordinate) * noFish)
+		directions[i+DEG_BOUNDS] = ray.Dir
+		rays[i+DEG_BOUNDS] = *ray
 	}
 
 	if g.represntation == 0 {
@@ -208,24 +203,24 @@ func main() {
 
 	// create some map
 	mab := makeStandardMap()
-	mab[1][7] = 1
-	mab[2][7] = 1
-	mab[3][7] = 1
-	mab[4][7] = 1
-	mab[4][8] = 1
-	mab[4][9] = 1
-	mab[4][10] = 1
-	mab[4][11] = 1
-	mab[4][12] = 1
-	mab[4][13] = 1
-	mab[4][14] = 1
-	mab[13][14] = 1
-	mab[14][14] = 1
-	mab[15][14] = 1
-	mab[16][14] = 1
-	mab[16][13] = 1
-	mab[16][12] = 1
-	mab[16][11] = 1
+	mab[1][7] = 2
+	mab[2][7] = 2
+	mab[3][7] = 2
+	mab[4][7] = 2
+	mab[4][8] = 2
+	mab[4][9] = 2
+	mab[4][10] = 2
+	mab[4][11] = 2
+	mab[4][12] = 2
+	mab[4][13] = 2
+	mab[4][14] = 2
+	mab[13][14] = 2
+	mab[14][14] = 2
+	mab[15][14] = 2
+	mab[16][14] = 2
+	mab[16][13] = 2
+	mab[16][12] = 2
+	mab[16][11] = 2
 
 	// create the game struct
 	game := &Game{

@@ -27,13 +27,10 @@ type Coordinate struct {
 }
 
 type Ray struct {
-	C  Coordinate
-	D  Direction
-	Wt WallType
-}
-
-func (c Coordinate) IsInvalid() bool {
-	return math.IsNaN(c.X) || math.IsNaN(c.Y)
+	Coord     Coordinate
+	Dir       Direction
+	Wt        WallType
+	Ang, Dist float64
 }
 
 func (c Direction) asText() string {
@@ -86,9 +83,9 @@ func keepCasting(ix, iy, xOffset, yOffset, blockSize float64, direction Directio
 		// TODO we might add more walltypes later, then we should switch instead
 		if wallType != 0 {
 			return &Ray{
-				C:  Coordinate{ix, iy},
-				D:  direction,
-				Wt: wallType,
+				Coord: Coordinate{ix, iy},
+				Dir:   direction,
+				Wt:    wallType,
 			}, nil
 		}
 
@@ -119,7 +116,13 @@ func castRayHorizontal(coordinate Coordinate, angle, blockSize float64, m [][]Wa
 	}
 
 	ix = (coordinate.Y-iy)*a + coordinate.X
-	return keepCasting(ix, iy, x_offset, y_offset, blockSize, HORIZONTAL, m)
+	ray, err := keepCasting(ix, iy, x_offset, y_offset, blockSize, HORIZONTAL, m)
+	if err != nil {
+		return nil, err
+	}
+	ray.Dist = coordinate.DistanceTo(ray.Coord)
+	ray.Ang = angle
+	return ray, nil
 }
 
 func castRayVertical(coordinate Coordinate, angle, blockSize float64, m [][]WallType) (*Ray, error) {
@@ -142,7 +145,13 @@ func castRayVertical(coordinate Coordinate, angle, blockSize float64, m [][]Wall
 	}
 
 	iy = (coordinate.X-ix)*a + coordinate.Y
-	return keepCasting(ix, iy, x_offset, y_offset, blockSize, VERTICAL, m)
+	ray, err := keepCasting(ix, iy, x_offset, y_offset, blockSize, VERTICAL, m)
+	if err != nil {
+		return nil, err
+	}
+	ray.Dist = coordinate.DistanceTo(ray.Coord)
+	ray.Ang = angle
+	return ray, nil
 }
 
 func CastRay(coordinate Coordinate, angle, blockSize float64, m [][]WallType) (*Ray, error) {
@@ -155,8 +164,8 @@ func CastRay(coordinate Coordinate, angle, blockSize float64, m [][]WallType) (*
 	} else if vertErr != nil {
 		return hozRay, nil
 	}
-	l1 := hozRay.C.DistanceTo(coordinate)
-	l2 := vertRay.C.DistanceTo(coordinate)
+	l1 := hozRay.Coord.DistanceTo(coordinate)
+	l2 := vertRay.Coord.DistanceTo(coordinate)
 	if l1 > l2 {
 		return vertRay, nil
 	}

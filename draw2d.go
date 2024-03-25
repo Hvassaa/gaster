@@ -72,13 +72,11 @@ func (g *Game) Render2D(raysHits []raycasting.Coordinate) {
 	playerY := r2d.translateY(screen, float64(g.player.coordinate.Y))
 	vector.DrawFilledCircle(screen, playerX, playerY, float32(radius), r2d.PlayerColor, false)
 	for _, coordinate := range raysHits {
-		if !coordinate.IsInvalid() {
-			x1 := r2d.translateX(screen, g.player.coordinate.X)
-			y1 := r2d.translateY(screen, g.player.coordinate.Y)
-			x2 := r2d.translateX(screen, coordinate.X)
-			y2 := r2d.translateY(screen, coordinate.Y)
-			vector.StrokeLine(screen, x1, y1, x2, y2, 1, r2d.PlayerColor, false)
-		}
+		x1 := r2d.translateX(screen, g.player.coordinate.X)
+		y1 := r2d.translateY(screen, g.player.coordinate.Y)
+		x2 := r2d.translateX(screen, coordinate.X)
+		y2 := r2d.translateY(screen, coordinate.Y)
+		vector.StrokeLine(screen, x1, y1, x2, y2, 1, r2d.PlayerColor, false)
 	}
 	directionRayX := r2d.translateX(screen, g.player.coordinate.X+math.Cos(g.player.Angle)*radius*10)
 	directionRayY := r2d.translateY(screen, g.player.coordinate.Y+math.Sin(g.player.Angle)*radius*10)

@@ -14,6 +14,7 @@ type Renderer3D struct {
 	WallColors                                        map[raycasting.WallType]color.Color
 	Screen                                            *ebiten.Image
 	ScreenMid, ColumnWidth, ScreenWidth, ScreenHeight float32
+	texture                                           Texture
 }
 
 func NewRenderer3D(screen *ebiten.Image, noOfRays int) *Renderer3D {
@@ -33,35 +34,37 @@ func NewRenderer3D(screen *ebiten.Image, noOfRays int) *Renderer3D {
 		ScreenWidth:  screenWidth,
 		ScreenMid:    screenHeight / 2.,
 		ColumnWidth:  screenWidth / float32(noOfRays),
+		texture:      LoadTexture(CROSS_TEXTURE),
 	}
 }
 
-func (g *Game) Render3D(rayDistances []float32, directions []raycasting.Direction, coords []raycasting.Coordinate, rays []Ray) {
+func (g *Game) Render3D(rayDistances []float32, directions []raycasting.Direction, coords []raycasting.Coordinate, rays []raycasting.Ray) {
 	r3d := g.r3d
-	b := [][]uint8{
-		{20, 40, 60, 80, 100, 120, 140, 160, 180, 200},
-		{200, 180, 160, 140, 120, 100, 80, 60, 40, 20},
-		{20, 40, 60, 80, 100, 120, 140, 160, 180, 200},
-		{200, 180, 160, 140, 120, 100, 80, 60, 40, 20},
-		{20, 40, 60, 80, 100, 120, 140, 160, 180, 200},
-		{200, 180, 160, 140, 120, 100, 80, 60, 40, 20},
-		{20, 40, 60, 80, 100, 120, 140, 160, 180, 200},
-		{200, 180, 160, 140, 120, 100, 80, 60, 40, 20},
-		{20, 40, 60, 80, 100, 120, 140, 160, 180, 200},
-		{200, 180, 160, 140, 120, 100, 80, 60, 40, 20},
-	}
-	b = [][]uint8{
-		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
-		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
-		{0, 255, 255, 255, 255, 255, 255, 255, 255, 0},
-		{0, 255, 255, 255, 255, 255, 255, 255, 255, 0},
-		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
-		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
-		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
-		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
-		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
-		{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
-	}
+	b := r3d.texture
+	// b := [][]uint8{
+	// 	{20, 40, 60, 80, 100, 120, 140, 160, 180, 200},
+	// 	{200, 180, 160, 140, 120, 100, 80, 60, 40, 20},
+	// 	{20, 40, 60, 80, 100, 120, 140, 160, 180, 200},
+	// 	{200, 180, 160, 140, 120, 100, 80, 60, 40, 20},
+	// 	{20, 40, 60, 80, 100, 120, 140, 160, 180, 200},
+	// 	{200, 180, 160, 140, 120, 100, 80, 60, 40, 20},
+	// 	{20, 40, 60, 80, 100, 120, 140, 160, 180, 200},
+	// 	{200, 180, 160, 140, 120, 100, 80, 60, 40, 20},
+	// 	{20, 40, 60, 80, 100, 120, 140, 160, 180, 200},
+	// 	{200, 180, 160, 140, 120, 100, 80, 60, 40, 20},
+	// }
+	// b = [][]uint8{
+	// 	{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+	// 	{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+	// 	{0, 255, 255, 255, 255, 255, 255, 255, 255, 0},
+	// 	{0, 255, 255, 255, 255, 255, 255, 255, 255, 0},
+	// 	{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+	// 	{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+	// 	{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+	// 	{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+	// 	{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+	// 	{0, 0, 0, 0, 255, 255, 0, 0, 0, 0},
+	// }
 
 	r3d.Screen.Fill(r3d.BottomColor)
 
@@ -100,9 +103,9 @@ func (g *Game) Render3D(rayDistances []float32, directions []raycasting.Directio
 			var y1 float32 = top + vertSlice*float32(fj)
 			var y2 float32 = y1 + vertSlice
 			yTextureIdx := j
-			angle := ray.Angle
-			leftWallHit := angle > raycasting.PI_HALF && angle < raycasting.PI_THREE_HALF && ray.Direction == raycasting.VERTICAL
-			bottomWallHit := angle < raycasting.PI && ray.Direction == raycasting.HORIZONTAL
+			angle := ray.Ang
+			leftWallHit := angle > raycasting.PI_HALF && angle < raycasting.PI_THREE_HALF && ray.Dir == raycasting.VERTICAL
+			bottomWallHit := angle < raycasting.PI && ray.Dir == raycasting.HORIZONTAL
 			if leftWallHit || bottomWallHit {
 				// when the way is left or down, the texture is mirrored
 				columnColor.B = b[yTextureIdx][xTextureListSize-xTextureIdx-1]
