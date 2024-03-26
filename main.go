@@ -7,7 +7,9 @@ import (
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hvassaa/gaster/player"
 	"github.com/hvassaa/gaster/raycasting"
+	"github.com/hvassaa/gaster/rendering"
 )
 
 const (
@@ -23,14 +25,13 @@ const (
 )
 
 type Game struct {
-	player           *Player
+	player           *player.Player
 	mab              [][]raycasting.WallType
 	represntation    int
 	cursorX, cursorY int
-	yMod             float32
 	Paused           bool
-	r3d              *Renderer3D
-	r2d              *Renderer2D
+	r3d              *rendering.Renderer3D
+	r2d              *rendering.Renderer2D
 	updateRenders    bool
 }
 
@@ -69,7 +70,7 @@ func (g *Game) Update() error {
 
 	// Update y, to look up or down
 	if deltaY != 0 && g.cursorY != 0 {
-		g.yMod = max(min(g.yMod+float32(deltaY)/2., 180), -180)
+		g.r3d.YMod = max(min(g.r3d.YMod+float32(deltaY)/2., 180), -180)
 	}
 
 	// update mouse position
@@ -88,13 +89,13 @@ func (g *Game) Update() error {
 
 	// move forward or backwards with keyboard
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
-		ray, err := raycasting.CastRay(*g.player.coordinate, g.player.Angle, BLOCK_SIZE, g.mab)
-		if err == nil && ray.Coord.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
+		ray, err := raycasting.CastRay(*g.player.Coord, g.player.Angle, BLOCK_SIZE, g.mab)
+		if err == nil && ray.Coord.DistanceTo(*g.player.Coord) > BLOCK_SIZE/2 {
 			g.player.Move(1)
 		}
 	} else if ebiten.IsKeyPressed(ebiten.KeyS) {
-		ray, err := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+raycasting.PI), BLOCK_SIZE, g.mab)
-		if err == nil && ray.Coord.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
+		ray, err := raycasting.CastRay(*g.player.Coord, raycasting.NormalizeAngle(g.player.Angle+raycasting.PI), BLOCK_SIZE, g.mab)
+		if err == nil && ray.Coord.DistanceTo(*g.player.Coord) > BLOCK_SIZE/2 {
 			g.player.Move(-1)
 		}
 	}
@@ -102,14 +103,14 @@ func (g *Game) Update() error {
 	// strafe
 	if ebiten.IsKeyPressed(ebiten.KeyA) {
 		angle := -raycasting.PI_HALF
-		ray, err := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+angle), BLOCK_SIZE, g.mab)
-		if err == nil && ray.Coord.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
+		ray, err := raycasting.CastRay(*g.player.Coord, raycasting.NormalizeAngle(g.player.Angle+angle), BLOCK_SIZE, g.mab)
+		if err == nil && ray.Coord.DistanceTo(*g.player.Coord) > BLOCK_SIZE/2 {
 			g.player.MoveWithAngle(1, angle)
 		}
 	} else if ebiten.IsKeyPressed(ebiten.KeyD) {
 		angle := raycasting.PI_HALF
-		ray, err := raycasting.CastRay(*g.player.coordinate, raycasting.NormalizeAngle(g.player.Angle+angle), BLOCK_SIZE, g.mab)
-		if err == nil && ray.Coord.DistanceTo(*g.player.coordinate) > BLOCK_SIZE/2 {
+		ray, err := raycasting.CastRay(*g.player.Coord, raycasting.NormalizeAngle(g.player.Angle+angle), BLOCK_SIZE, g.mab)
+		if err == nil && ray.Coord.DistanceTo(*g.player.Coord) > BLOCK_SIZE/2 {
 			g.player.MoveWithAngle(1, angle)
 		}
 	}
@@ -124,13 +125,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	rays := make([]raycasting.Ray, NO_OF_RAYS)
 	for i := -DEG_BOUNDS; i <= DEG_BOUNDS; i++ {
 		rayAngle := raycasting.NormalizeAngle(g.player.Angle + (float64(i) * DEG_PER_RAY * raycasting.DEG_TO_RAD))
-		ray, err := raycasting.CastRay(*g.player.coordinate, rayAngle, BLOCK_SIZE, g.mab)
+		ray, err := raycasting.CastRay(*g.player.Coord, rayAngle, BLOCK_SIZE, g.mab)
 		if err != nil {
 			continue
 		}
 		coords[i+DEG_BOUNDS] = ray.Coord
 		noFish := math.Cos(raycasting.NormalizeAngle(rayAngle - g.player.Angle))
-		rayDistances[i+DEG_BOUNDS] = float32(ray.Coord.DistanceTo(*g.player.coordinate) * noFish)
+		rayDistances[i+DEG_BOUNDS] = float32(ray.Coord.DistanceTo(*g.player.Coord) * noFish)
 		directions[i+DEG_BOUNDS] = ray.Dir
 		rays[i+DEG_BOUNDS] = *ray
 	}
@@ -141,29 +142,29 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			height := screen.Bounds().Dy()
 			twoDScreen := screen.SubImage(image.Rect(0, 0, width/2, height)).(*ebiten.Image)
 			threeDScreen := screen.SubImage(image.Rect(width/2, 0, width, height)).(*ebiten.Image)
-			g.r2d = NewRenderer2D(twoDScreen)
-			g.r3d = NewRenderer3D(threeDScreen, NO_OF_RAYS)
+			g.r2d = rendering.NewRenderer2D(twoDScreen, WORLD_WIDTH, WORLD_HEIGHT, BLOCK_SIZE, g.player, g.mab)
+			g.r3d = rendering.NewRenderer3D(threeDScreen, g.player, NO_OF_RAYS, BLOCK_SIZE)
 			g.updateRenders = false
 		}
 
-		g.Render3D(rays)
-		g.Render2D(rays)
+		g.r3d.Render3D(rays)
+		g.r2d.Render2D(rays)
 	} else if g.represntation == 1 {
 		if g.updateRenders {
-			g.r3d = NewRenderer3D(screen, NO_OF_RAYS)
+			g.r3d = rendering.NewRenderer3D(screen, g.player, NO_OF_RAYS, BLOCK_SIZE)
 			g.updateRenders = false
 		}
-		g.Render3D(rays)
+		g.r3d.Render3D(rays)
 	} else if g.represntation == 2 {
 		if g.updateRenders {
 			twoDScreen := screen.SubImage(image.Rect(0, 0, 300, 300)).(*ebiten.Image)
-			g.r2d = NewRenderer2D(twoDScreen)
-			g.r3d = NewRenderer3D(screen, NO_OF_RAYS)
+			g.r2d = rendering.NewRenderer2D(twoDScreen, WORLD_WIDTH, WORLD_HEIGHT, BLOCK_SIZE, g.player, g.mab)
+			g.r3d = rendering.NewRenderer3D(screen, g.player, NO_OF_RAYS, BLOCK_SIZE)
 			g.updateRenders = false
 		}
 
-		g.Render3D(rays)
-		g.Render2D(rays)
+		g.r3d.Render3D(rays)
+		g.r2d.Render2D(rays)
 	}
 }
 
@@ -218,8 +219,8 @@ func main() {
 
 	// create the game struct
 	game := &Game{
-		player: &Player{
-			coordinate: &raycasting.Coordinate{
+		player: &player.Player{
+			Coord: &raycasting.Coordinate{
 				X: WORLD_WIDTH / 2.,
 				Y: WORLD_HEIGHT / 2.,
 			},

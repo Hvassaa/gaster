@@ -1,4 +1,4 @@
-package main
+package player
 
 import (
 	"math"
@@ -7,7 +7,7 @@ import (
 )
 
 type Player struct {
-	coordinate *raycasting.Coordinate
+	Coord *raycasting.Coordinate
 	Angle      float64
 	Speed      float64
 }
@@ -19,11 +19,11 @@ func (p *Player) IncreaseAngle(inc float64) {
 }
 
 func (p *Player) Move(multiplier float64) {
-	p.coordinate.X += math.Cos(p.Angle) * p.Speed * multiplier
-	p.coordinate.Y += math.Sin(p.Angle) * p.Speed * multiplier
+	p.Coord.X += math.Cos(p.Angle) * p.Speed * multiplier
+	p.Coord.Y += math.Sin(p.Angle) * p.Speed * multiplier
 }
 
 func (p *Player) MoveWithAngle(multiplier, angle float64) {
-	p.coordinate.X += math.Cos(raycasting.NormalizeAngle(p.Angle + angle)) * p.Speed * multiplier
-	p.coordinate.Y += math.Sin(raycasting.NormalizeAngle(p.Angle + angle)) * p.Speed * multiplier
+	p.Coord.X += math.Cos(raycasting.NormalizeAngle(p.Angle + angle)) * p.Speed * multiplier
+	p.Coord.Y += math.Sin(raycasting.NormalizeAngle(p.Angle + angle)) * p.Speed * multiplier
 }
