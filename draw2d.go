@@ -38,7 +38,7 @@ func NewRenderer2D(screen *ebiten.Image) *Renderer2D {
 	}
 }
 
-func (g *Game) Render2D(raysHits []raycasting.Coordinate) {
+func (g *Game) Render2D(rays []raycasting.Ray) {
 	r2d := g.r2d
 	screen := r2d.Screen
 	screen.Fill(color.Black)
@@ -71,11 +71,11 @@ func (g *Game) Render2D(raysHits []raycasting.Coordinate) {
 	playerX := r2d.translateX(screen, float64(g.player.coordinate.X))
 	playerY := r2d.translateY(screen, float64(g.player.coordinate.Y))
 	vector.DrawFilledCircle(screen, playerX, playerY, float32(radius), r2d.PlayerColor, false)
-	for _, coordinate := range raysHits {
+	for _, ray := range rays {
 		x1 := r2d.translateX(screen, g.player.coordinate.X)
 		y1 := r2d.translateY(screen, g.player.coordinate.Y)
-		x2 := r2d.translateX(screen, coordinate.X)
-		y2 := r2d.translateY(screen, coordinate.Y)
+		x2 := r2d.translateX(screen, ray.Coord.X)
+		y2 := r2d.translateY(screen, ray.Coord.Y)
 		vector.StrokeLine(screen, x1, y1, x2, y2, 1, r2d.PlayerColor, false)
 	}
 	directionRayX := r2d.translateX(screen, g.player.coordinate.X+math.Cos(g.player.Angle)*radius*10)

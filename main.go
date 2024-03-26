@@ -117,12 +117,6 @@ func (g *Game) Update() error {
 	return nil
 }
 
-// type Ray struct {
-// 	Angle, Distance float64
-// 	Direction       raycasting.Direction
-// 	Coordinate      raycasting.Coordinate
-// }
-
 func (g *Game) Draw(screen *ebiten.Image) {
 	coords := make([]raycasting.Coordinate, NO_OF_RAYS)
 	rayDistances := make([]float32, NO_OF_RAYS)
@@ -152,14 +146,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			g.updateRenders = false
 		}
 
-		g.Render3D(rayDistances, directions, coords, rays)
-		g.Render2D(coords)
+		g.Render3D(rays)
+		g.Render2D(rays)
 	} else if g.represntation == 1 {
 		if g.updateRenders {
 			g.r3d = NewRenderer3D(screen, NO_OF_RAYS)
 			g.updateRenders = false
 		}
-		g.Render3D(rayDistances, directions, coords, rays)
+		g.Render3D(rays)
 	} else if g.represntation == 2 {
 		if g.updateRenders {
 			twoDScreen := screen.SubImage(image.Rect(0, 0, 300, 300)).(*ebiten.Image)
@@ -168,8 +162,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			g.updateRenders = false
 		}
 
-		g.Render3D(rayDistances, directions, coords, rays)
-		g.Render2D(coords)
+		g.Render3D(rays)
+		g.Render2D(rays)
 	}
 }
 
