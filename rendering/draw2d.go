@@ -44,7 +44,7 @@ func NewRenderer2D(screen *ebiten.Image, worldWidth, worldHeight, blockSize floa
 	}
 }
 
-func (r2d *Renderer2D) Render2D(rays []raycasting.Ray) {
+func (r2d *Renderer2D) Render(rays []raycasting.Ray) {
 	screen := r2d.Screen
 	screen.Fill(color.Black)
 	xBlockWidth := r2d.translateX(screen, r2d.BlockSize)

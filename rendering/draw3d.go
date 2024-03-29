@@ -13,7 +13,6 @@ import (
 type Renderer3D struct {
 	TopColor, BottomColor                             color.Color
 	BlockSize                                         float64
-	YMod                                              float32
 	WallColors                                        map[raycasting.WallType]color.Color
 	Screen                                            *ebiten.Image
 	ScreenMid, ColumnWidth, ScreenWidth, ScreenHeight float32
@@ -47,13 +46,13 @@ func NewRenderer3D(screen *ebiten.Image, player *player.Player, noOfRays int, bl
 	}
 }
 
-func (r3d *Renderer3D) Render3D(rays []raycasting.Ray) {
+func (r3d *Renderer3D) Render(rays []raycasting.Ray) {
 	r3d.Screen.Fill(r3d.BottomColor)
 
 	xStart := r3d.Screen.Bounds().Min.X
 	// we render walls "half up and down" from this point
 	// we initially set it to the middle of the screen
-	renderMiddle := r3d.ScreenMid + r3d.YMod*r3d.ScreenHeight*3/180
+	renderMiddle := r3d.ScreenMid + float32(r3d.Player.HozAngle)*r3d.ScreenHeight*3/180
 
 	vector.DrawFilledRect(r3d.Screen, 0, renderMiddle, r3d.ScreenWidth, -r3d.ScreenHeight*4, r3d.TopColor, false)
 

@@ -30,8 +30,8 @@ type Game struct {
 	represntation    int
 	cursorX, cursorY int
 	Paused           bool
-	r3d              *rendering.Renderer3D
-	r2d              *rendering.Renderer2D
+	r3d              rendering.Renderer
+	r2d              rendering.Renderer
 	updateRenders    bool
 }
 
@@ -70,7 +70,7 @@ func (g *Game) Update() error {
 
 	// Update y, to look up or down
 	if deltaY != 0 && g.cursorY != 0 {
-		g.r3d.YMod = max(min(g.r3d.YMod+float32(deltaY)/2., 180), -180)
+		g.player.IncreaseHozAngle(float64(deltaY))
 	}
 
 	// update mouse position
@@ -147,14 +147,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			g.updateRenders = false
 		}
 
-		g.r3d.Render3D(rays)
-		g.r2d.Render2D(rays)
+		g.r3d.Render(rays)
+		g.r2d.Render(rays)
 	} else if g.represntation == 1 {
 		if g.updateRenders {
 			g.r3d = rendering.NewRenderer3D(screen, g.player, NO_OF_RAYS, BLOCK_SIZE)
 			g.updateRenders = false
 		}
-		g.r3d.Render3D(rays)
+		g.r3d.Render(rays)
 	} else if g.represntation == 2 {
 		if g.updateRenders {
 			twoDScreen := screen.SubImage(image.Rect(0, 0, 300, 300)).(*ebiten.Image)
@@ -163,8 +163,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			g.updateRenders = false
 		}
 
-		g.r3d.Render3D(rays)
-		g.r2d.Render2D(rays)
+		g.r3d.Render(rays)
+		g.r2d.Render(rays)
 	}
 }
 
