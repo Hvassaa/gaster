@@ -47,20 +47,14 @@ func NewRenderer3D(screen *ebiten.Image, player *player.Player, noOfRays int, bl
 }
 
 func (r3d *Renderer3D) Render(rays []raycasting.Ray) {
-	r3d.Screen.Fill(r3d.BottomColor)
-
 	xStart := r3d.Screen.Bounds().Min.X
 	// we render walls "half up and down" from this point
 	// we initially set it to the middle of the screen
 	renderMiddle := r3d.ScreenMid + float32(r3d.Player.HozAngle)*r3d.ScreenHeight*3/180
 
-	vector.DrawFilledRect(r3d.Screen, 0, renderMiddle, r3d.ScreenWidth, -r3d.ScreenHeight*4, r3d.TopColor, false)
-
 	for i, ray := range rays {
-
 		columnColor := color.RGBA{0, 0, 0, 255}
 		b := r3d.texture[uint(rays[i].Wt)]
-		// ray := rays[i]
 		coord := ray.Coord
 		var xPosOnBlock float64
 		if ray.Dir == raycasting.HORIZONTAL {
@@ -83,6 +77,7 @@ func (r3d *Renderer3D) Render(rays []raycasting.Ray) {
 		xTextureSliceSize := r3d.BlockSize / float64(xTextureListSize)
 		xTextureIdx := int(math.Floor(xPosOnBlock / xTextureSliceSize))
 		top := renderMiddle - columnHeight/2
+		bot := renderMiddle + columnHeight/2
 		vertSlice := columnHeight / float32(yTextureListSize)
 		for j := 0; j < yTextureListSize; j++ {
 			fj := float64(j)
@@ -100,5 +95,8 @@ func (r3d *Renderer3D) Render(rays []raycasting.Ray) {
 			}
 			vector.StrokeLine(r3d.Screen, x, y1, x, y2, r3d.ColumnWidth, columnColor, false)
 		}
+		// draw top and bottom colors
+		vector.StrokeLine(r3d.Screen, x, bot, x, r3d.ScreenHeight, r3d.ColumnWidth, r3d.BottomColor, false)
+		vector.StrokeLine(r3d.Screen, x, top, x, 0, r3d.ColumnWidth, r3d.TopColor, false)
 	}
 }
