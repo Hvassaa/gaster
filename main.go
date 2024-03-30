@@ -81,11 +81,9 @@ func (g *Game) Update() error {
 	if deltaX != 0 {
 		xMultiplier += float64(deltaX) / -2. * raycasting.DEG_TO_RAD
 	}
-	if deltaX > 0 {
+	if deltaX != 0 {
 		g.player.IncreaseAngle(xMultiplier)
-	} else if deltaX < 0 {
-		g.player.IncreaseAngle(xMultiplier)
-	}
+	} 
 
 	// move forward or backwards with keyboard
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
@@ -113,6 +111,12 @@ func (g *Game) Update() error {
 		if err == nil && ray.Coord.DistanceTo(*g.player.Coord) > BLOCK_SIZE/2 {
 			g.player.MoveWithAngle(1, angle)
 		}
+	}
+
+	if ebiten.IsKeyPressed(ebiten.KeyQ) {
+		g.player.IncreaseAngle(-0.04)
+	} else if ebiten.IsKeyPressed(ebiten.KeyE) {
+		g.player.IncreaseAngle(0.04)
 	}
 
 	return nil
