@@ -64,14 +64,11 @@ func (r3d *Renderer3D) Render(rays []raycasting.Ray) {
 			xPosOnBlock = math.Mod(coord.Y, r3d.BlockSize)
 		}
 
-		// this avoid fisheye on "right ahead walls"
-		noFish := math.Cos(raycasting.NormalizeAngle(ray.Ang - r3d.Player.Angle))
-		noFishedDist := float32(ray.Coord.DistanceTo(*r3d.Player.Coord) * noFish)
-		// this avoid fisheye on "side walls"
-		columnHeight := r3d.ScreenHeight / float32(noFishedDist)
-		columnHeight *= 70
-		x := float32(xStart) + float32(i)*r3d.ColumnWidth
+		// this avoid fisheye
+		noFish := math.Cos(raycasting.NormalizeAngle(r3d.Player.Angle - ray.Ang)) * ray.Dist
+		columnHeight := float32((r3d.BlockSize * float64(r3d.ScreenHeight)) / noFish)
 
+		x := float32(xStart) + float32(i)*r3d.ColumnWidth
 		yTextureListSize := len(b)
 		xTextureListSize := len(b[0])
 		xTextureSliceSize := r3d.BlockSize / float64(xTextureListSize)
@@ -79,6 +76,11 @@ func (r3d *Renderer3D) Render(rays []raycasting.Ray) {
 		top := renderMiddle - columnHeight/2
 		bot := renderMiddle + columnHeight/2
 		vertSlice := columnHeight / float32(yTextureListSize)
+
+		// draw top and bottom colors
+		vector.StrokeLine(r3d.Screen, x, bot, x, r3d.ScreenHeight, r3d.ColumnWidth, r3d.BottomColor, false)
+		vector.StrokeLine(r3d.Screen, x, top, x, 0, r3d.ColumnWidth, r3d.TopColor, false)
+
 		for j := 0; j < yTextureListSize; j++ {
 			fj := float64(j)
 			var y1 float32 = top + vertSlice*float32(fj)
@@ -95,8 +97,27 @@ func (r3d *Renderer3D) Render(rays []raycasting.Ray) {
 			}
 			vector.StrokeLine(r3d.Screen, x, y1, x, y2, r3d.ColumnWidth, columnColor, false)
 		}
-		// draw top and bottom colors
-		vector.StrokeLine(r3d.Screen, x, bot, x, r3d.ScreenHeight, r3d.ColumnWidth, r3d.BottomColor, false)
-		vector.StrokeLine(r3d.Screen, x, top, x, 0, r3d.ColumnWidth, r3d.TopColor, false)
+
+		// if i%4 == 0 {
+		// topColor := color.RGBA{0, 255, 0, 255}
+		// 	vector.StrokeLine(r3d.Screen, x, bot, x+float32(math.Cos(ray.Ang))*columnHeight, r3d.ScreenHeight, r3d.ColumnWidth, topColor, false)
+		// }
 	}
+
+	// for i, ray := range rays {
+	// 	// this avoid fisheye on "right ahead walls"
+	// 	noFish := math.Cos(raycasting.NormalizeAngle(r3d.Player.Angle - ray.Ang))
+	// 	columnHeight := float32((r3d.BlockSize * float64(r3d.ScreenHeight)) / (ray.Dist * noFish))
+	// 	x := float32(xStart) + float32(i)*r3d.ColumnWidth
+	// 	bot := renderMiddle + columnHeight/2
+	// 	// if i == 1 || i == len(rays)-1 {
+	// 	topColor := color.RGBA{0, 255, 0, 255}
+	// 	vector.StrokeCircle(r3d.Screen, x, bot, 10, 2, color.White, false)
+	// 	vector.StrokeCircle(r3d.Screen, r3d.ScreenWidth/2, r3d.ScreenHeight, 10, 2, color.White, false)
+	// 	vector.StrokeLine(r3d.Screen, x, bot, r3d.ScreenWidth/2, r3d.ScreenHeight, 1, topColor, false)
+	// 	vector.StrokeLine(r3d.Screen, r3d.ScreenWidth/2, r3d.ScreenHeight, x, bot, 1, topColor, false)
+	// 	vector.StrokeLine(r3d.Screen, x, bot, x, r3d.ScreenHeight, 1, color.Black, false)
+	// 	// vector.StrokeLine(r3d.Screen, x, bot, r3d.ScreenWidth/2, r3d.ScreenHeight, 1, topColor, false)
+	// 	// }
+	// }
 }
