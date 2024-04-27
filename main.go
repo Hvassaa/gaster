@@ -19,7 +19,7 @@ const (
 	BLOCKS_X     int = WORLD_WIDTH / BLOCK_SIZE
 	BLOCKS_Y     int = WORLD_HEIGHT / BLOCK_SIZE
 	FOV              = 60
-	NO_OF_RAYS       = 401
+	NO_OF_RAYS       = 61
 	DEG_BOUNDS       = (NO_OF_RAYS - 1) / 2
 	DEG_PER_RAY      = FOV / (NO_OF_RAYS - 1.)
 )

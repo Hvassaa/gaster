@@ -65,7 +65,7 @@ func (r3d *Renderer3D) Render(rays []raycasting.Ray) {
 		}
 
 		// this avoid fisheye
-		noFish := math.Cos(raycasting.NormalizeAngle(r3d.Player.Angle - ray.Ang)) * ray.Dist
+		noFish := math.Cos(raycasting.NormalizeAngle(r3d.Player.Angle-ray.Ang)) * ray.Dist
 		columnHeight := float32((r3d.BlockSize * float64(r3d.ScreenHeight)) / noFish)
 
 		x := float32(xStart) + float32(i)*r3d.ColumnWidth
@@ -97,6 +97,20 @@ func (r3d *Renderer3D) Render(rays []raycasting.Ray) {
 			}
 			vector.StrokeLine(r3d.Screen, x, y1, x, y2, r3d.ColumnWidth, columnColor, false)
 		}
+
+		// for y := int(math.Round(float64(bot))); y < r3d.Screen.Bounds().Size().Y; y++ {
+		// 	screenHalf := r3d.ScreenMid
+		// 	dy := float64(y) - float64(screenHalf)
+		// 	ra := math.Cos(raycasting.NormalizeAngle(r3d.Player.Angle - ray.Ang))
+		// 	tx := float32(r3d.Player.Coord.X/2 + (math.Cos(ray.Ang))*float64(screenHalf)*(r3d.BlockSize/2)/dy/ra)
+		// 	ty := float32(r3d.Player.Coord.X/2 + (math.Sin(ray.Ang))*float64(screenHalf)*(r3d.BlockSize/2)/dy/ra)
+		// 	_, _ = tx, ty
+		// 	if i%2 == 0 {
+		// 		// r3d.Screen.Set(int(tx), int(ty), color.Black)
+		// 	// vector.StrokeLine(r3d.Screen, tx, ty, tx+1, ty, 1, color.Opaque, false)
+		// 		// vector.DrawFilledCircle(r3d.Screen, tx, ty, 0.5, color.Black, false)
+		// 	}
+		// }
 
 		// if i%4 == 0 {
 		// topColor := color.RGBA{0, 255, 0, 255}
